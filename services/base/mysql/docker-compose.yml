@@ -1,0 +1,87 @@
+include:
+  - ../backup/docker-compose.yml
+
+x-volumes: &mysql-volumes
+  volumes:
+      - mysql_data:/srv/backup/var/lib/mysql
+
+services:
+  backup: *mysql-volumes
+  restore:
+    <<: *mysql-volumes
+    configs:
+      - source: mysql_restore_00_owner
+        target: /docker-entrypoint-restore.d/00-mysql-owner.sh
+
+  mysql:
+    image: mysql:${DB_VER:?DB_VER is required}
+    hostname: mysql.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: unless-stopped
+    pull_policy: missing
+
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:?DB_NAME is required}
+      MYSQL_USER: ${DB_USER:?DB_USER is required}
+      MYSQL_PASSWORD_FILE: /run/secrets/db_password
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+
+    secrets:
+      - db_password
+      - db_root_password
+
+    configs:
+      - source: mysql_tuning
+        target: /etc/mysql/conf.d/tuning.cnf
+
+    volumes:
+        - mysql_data:/var/lib/mysql
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$(cat /run/secrets/db_root_password)"]
+      start_period: 20s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${MYSQL_CPU_LIMIT:-1.0}"
+          memory: ${MYSQL_MEM_LIMIT:-1G}
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=MySQL
+      - homepage.icon=mysql.png
+      - homepage.description=Relational database for ${COMPOSE_PROJECT_NAME}
+
+secrets:
+  db_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/db_password
+  db_root_password:
+    file: ${SECRETS_DIR}/env/${COMPOSE_PROJECT_NAME}/db_root_password
+
+configs:
+  mysql_tuning:
+    content: |
+      [mysqld]
+      innodb_buffer_pool_size = ${MYSQL_BUFFER_POOL:-256M}
+      max_connections = ${MYSQL_MAX_CONNECTIONS:-100}
+      slow_query_log = 1
+      long_query_time = 2
+
+  mysql_restore_00_owner:
+    content: |
+      set -e
+      chown -R 999:999 /srv/backup/var/lib/mysql
+      find /srv/backup/var/lib/mysql -type d -exec chmod 700 {} +
+      find /srv/backup/var/lib/mysql -type f -exec chmod 600 {} +
+
+volumes:
+  mysql_data:

@@ -1,0 +1,46 @@
+# Composed template: Gitea + MariaDB.
+# Wires gitea-base.yml and mariadb-base.yml
+# together on shared networks with a health-gated startup order. Include
+# this single file from a stack's docker-compose.yml; it needs no other
+# includes alongside it.
+#
+# In the stack's .env, set DB_HOST=mariadb.${STACK_DOMAIN}.local to match
+# the hostname mariadb-base.yml gives its service.
+
+include:
+  - base/gitea/docker-compose.yml
+  - base/mariadb/docker-compose.yml
+
+services:
+  gitea:
+    environment:
+      GITEA__database__DB_TYPE: ${DB_TYPE:-mysql}
+      GITEA__database__HOST: ${DB_HOST:?DB_HOST is required - set to the included database service's hostname}
+      GITEA__database__NAME: ${DB_NAME:?DB_NAME is required}
+      GITEA__database__USER: ${DB_USER:?DB_USER is required}
+      GITEA__database__PASSWD__FILE: /run/secrets/db_password
+      GITEA__database__SSL_MODE: disable
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      mariadb:
+        condition: service_healthy
+        restart: true
+
+  gitea-cli:
+    networks:
+      - backend
+
+  gitea-init:
+    extends:
+      service: gitea-cli
+
+  mariadb:
+    networks:
+      - backend
+
+networks:
+  frontend:
+  backend:
+    internal: true

@@ -1,0 +1,56 @@
+services:
+  backup:
+    image: busybox:latest
+    restart: unless-stopped
+    network_mode: none
+    working_dir: /srv/backup/
+    stop_signal: SIGKILL
+    stop_grace_period: 0s
+    volumes:
+      - backup_data:/backup:rw
+    configs:
+      - source: backup_crontab
+        target: /var/spool/cron/crontabs/root
+    command: crond -f -l 6 -L /dev/stdout
+    #command: sh -c "tar czvpf /backup/${COMPOSE_PROJECT_NAME}-$$(date +%Y%m%d-%H%M%S).tar.gz --exclude='backups' -C /srv/backup ."
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=Backup
+      - homepage.icon=mdi-backup-restore
+      - homepage.description=Scheduled backup job for ${COMPOSE_PROJECT_NAME}
+
+  restore:
+    image: busybox:latest
+    network_mode: none
+    working_dir: /srv/backup/
+    profiles:
+      - restore
+    volumes:
+      - backup_data:/backup:ro
+    command: >
+      sh -c '
+      if [ -z "$${BACKUP_FILE}" ]; then
+        echo "BACKUP_FILE is not set. Available backups:";
+        ls -1 /backup;
+        exit 1;
+      fi;
+      tar xzvpf "/backup/$${BACKUP_FILE}" -C /srv/backup;
+      for f in /docker-entrypoint-restore.d/*.sh; do
+        [ -e "$$f" ] || continue;
+        echo "running $$f";
+        sh "$$f";
+      done
+      '
+
+configs:
+  backup_crontab:
+    content: |
+      0 12 * * 3 [ $$(date +\%d) -le 7 ] && { mkdir -p /var/log/backup; TS="$$(date +\%Y\%m\%d-\%H\%M\%S)"; DATE="$$(date +\%Y\%m\%d)"; TIME="$$(date +\%Y-\%m-\%d\ \%H:\%M:\%S)"; LOGFILE="/var/log/backup/$${DATE}.log"; ARCHIVE="/backup/${COMPOSE_PROJECT_NAME}-$${TS}.tar.gz"; echo "[$${TIME}] backup started" | tee -a "$${LOGFILE}"; tar czvpf "$${ARCHIVE}" --exclude='backups' -C /srv/backup . >> "$${LOGFILE}" 2>&1 && echo "[$${TIME}] backup completed successfully" | tee -a "$${LOGFILE}" || echo "[$${TIME}] backup failed" | tee -a "$${LOGFILE}"; }
+
+volumes:
+  backup_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /mnt/raid/backup/archive/as01.omesa.net/containers/${COMPOSE_PROJECT_NAME}
+      o: bind,nosuid,nodev

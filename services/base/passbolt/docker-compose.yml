@@ -1,0 +1,144 @@
+include:
+  - ../backup/docker-compose.yml
+  - ../email/docker-compose.yml
+
+x-volumes: &passbolt-volumes
+  volumes:
+    - ${SECRETS_DIR:?SECRETS_DIR is required}/keys/${COMPOSE_PROJECT_NAME}/gpg:/srv/backup/etc/passbolt/gpg
+    - passbolt_jwt:/srv/backup/etc/passbolt/jwt
+
+services:
+  backup: *passbolt-volumes
+  restore: *passbolt-volumes
+
+  passbolt:
+    image: passbolt/passbolt:${PASSBOLT_VERSION:?PASSBOLT_VERSION is required}
+    hostname: passbolt.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: unless-stopped
+    pull_policy: missing
+
+    environment:
+      APP_FULL_BASE_URL: https://${STACK_DOMAIN}
+      PASSBOLT_SSL_FORCE: "${PASSBOLT_SSL_FORCE:-true}"
+      PASSBOLT_REGISTRATION_PUBLIC: "${PASSBOLT_REGISTRATION_PUBLIC:-false}"
+
+      DATASOURCES_DEFAULT_HOST: ${DB_HOST:?DB_HOST is required - set to the included database service's hostname}
+      DATASOURCES_DEFAULT_USERNAME: ${DB_USER:?DB_USER is required}
+      DATASOURCES_DEFAULT_PASSWORD_FILE: /run/secrets/db_password
+      DATASOURCES_DEFAULT_DATABASE: ${DB_NAME:?DB_NAME is required}
+
+      PASSBOLT_GPG_SERVER_KEY_FINGERPRINT: ${PASSBOLT_GPG_FINGERPRINT:?PASSBOLT_GPG_FINGERPRINT is required}
+      PASSBOLT_GPG_SERVER_KEY_PUBLIC: /etc/passbolt/gpg/serverkey.asc
+      PASSBOLT_GPG_SERVER_KEY_PRIVATE: /etc/passbolt/gpg/serverkey_private.asc
+
+      EMAIL_TRANSPORT_DEFAULT_HOST: ${MAIL_SMTP_HOST:?MAIL_SMTP_HOST is required}
+      EMAIL_TRANSPORT_DEFAULT_PORT: ${MAIL_SMTP_PORT:-587}
+      EMAIL_TRANSPORT_DEFAULT_TLS: "${MAIL_SMTP_TLS:-true}"
+      EMAIL_TRANSPORT_DEFAULT_USERNAME: ${MAIL_SMTP_USERNAME:-}
+      EMAIL_TRANSPORT_DEFAULT_PASSWORD_FILE: /run/secrets/mail_password
+      EMAIL_DEFAULT_FROM: ${MAIL_FROM:?MAIL_FROM is required}
+
+    secrets:
+      - db_password
+      - mail_password
+
+    volumes:
+      - ${SECRETS_DIR:?SECRETS_DIR is required}/keys/${COMPOSE_PROJECT_NAME}/gpg:/etc/passbolt/gpg:ro
+      - passbolt_images:/usr/share/php/passbolt/webroot/img/public
+      - passbolt_jwt:/etc/passbolt/jwt
+
+    healthcheck:
+      test: ["CMD", "/usr/bin/curl", "-fk", "https://localhost/healthcheck/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 6
+      start_period: 30s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${PASSBOLT_CPU_LIMIT:-1.0}"
+          memory: ${PASSBOLT_MEM_LIMIT:-512M}
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=Passbolt
+      - homepage.icon=passbolt.png
+      - homepage.description=Self-hosted password manager
+      - homepage.ping=https://${STACK_DOMAIN}
+      - homepage.href=https://${STACK_DOMAIN}
+
+  passbolt-cli:
+    extends:
+      service: passbolt
+    profiles:
+      - passbolt-cli
+    entrypoint: ["/bin/bash"]
+    restart: "no"
+    healthcheck:
+      test: []
+    deploy:
+      resources: {}
+    networks:
+      - egress
+
+  passbolt-init:
+    extends:
+      service: passbolt-cli
+    depends_on:
+      passbolt:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        for f in /docker-entrypoint-init.d/*.sh; do
+          [ -e "$$f" ] || continue
+          echo "running $$f"
+          bash "$$f"
+        done
+    secrets:
+      - passbolt_admin_password
+    configs:
+      - source: passbolt_init_00_gpg_check
+        target: /docker-entrypoint-init.d/00-gpg-check.sh
+      - source: passbolt_init_10_admin
+        target: /docker-entrypoint-init.d/10-admin-register.sh
+
+secrets:
+  db_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/db_password
+  passbolt_admin_password:
+    file: ${SECRETS_DIR}/env/${COMPOSE_PROJECT_NAME}/passbolt_admin_password
+
+configs:
+  passbolt_init_00_gpg_check:
+    content: |
+      set -e
+      if [ ! -f /etc/passbolt/gpg-keys/serverkey_private.asc ]; then
+        echo "no server key found in /etc/passbolt/gpg-keys - generate offline and place under secrets/keys/\${COMPOSE_PROJECT_NAME}/gpg/"
+        exit 1
+      fi
+      su -m -c "bin/cake passbolt healthcheck --gpg" -s /bin/bash www-data
+
+  passbolt_init_10_admin:
+    content: |
+      set -e
+      su -m -c "bin/cake passbolt register_user \
+        -u ${PASSBOLT_ADMIN_EMAIL:?PASSBOLT_ADMIN_EMAIL is required} \
+        -f ${PASSBOLT_ADMIN_FIRSTNAME:?PASSBOLT_ADMIN_FIRSTNAME is required} \
+        -l ${PASSBOLT_ADMIN_LASTNAME:?PASSBOLT_ADMIN_LASTNAME is required} \
+        -r admin" -s /bin/bash www-data || true
+
+volumes:
+  passbolt_images:
+  passbolt_jwt:
+
+networks:
+  egress:

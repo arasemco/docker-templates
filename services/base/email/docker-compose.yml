@@ -1,0 +1,15 @@
+x-mail-env: &mail-env
+  MAIL_SMTP_HOST: ${MAIL_SMTP_HOST:?MAIL_SMTP_HOST is required}
+  MAIL_SMTP_PORT: ${MAIL_SMTP_PORT:-587}
+  MAIL_SMTP_TLS: "${MAIL_SMTP_TLS:-true}"
+  MAIL_SMTP_USERNAME: ${MAIL_SMTP_USERNAME:-}
+  MAIL_FROM: ${MAIL_FROM:?MAIL_FROM is required}
+
+
+x-mail-secrets: &mail-secrets
+  - mail_password
+
+
+secrets:
+  mail_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/000-generic/email/password

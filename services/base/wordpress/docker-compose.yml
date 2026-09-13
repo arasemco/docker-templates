@@ -1,0 +1,153 @@
+include:
+  - ../backup/docker-compose.yml
+
+x-volumes: &wordpress-volumes
+  volumes:
+    - wordpress_data:/srv/backup/var/www/wordpress
+
+services:
+  backup: *wordpress-volumes
+  restore:
+    <<: *wordpress-volumes
+    configs:
+      - source: wp_restore_00_owner
+        target: /docker-entrypoint-restore.d/00-wordpress-owner.sh
+
+  wordpress:
+    image: wordpress:${WP_VER:?WP_VER is required}
+    hostname: wordpress.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: unless-stopped
+    pull_policy: missing
+
+    environment:
+      WORDPRESS_DB_HOST: ${DB_HOST:?DB_HOST is required - set to the included database service's hostname}
+      WORDPRESS_DB_USER: ${DB_USER:?DB_USER is required}
+      WORDPRESS_DB_PASSWORD_FILE: /run/secrets/db_password
+      WORDPRESS_DB_NAME: ${DB_NAME:?DB_NAME is required}
+
+      WORDPRESS_TABLE_PREFIX: ${WP_TABLE_PREFIX:-wp_}
+      WORDPRESS_DEBUG: ${WP_DEBUG:-0}
+
+    secrets:
+      - db_password
+
+    configs:
+      - source: wp_php_uploads
+        target: /usr/local/etc/php/conf.d/uploads.ini
+
+    volumes:
+      - wordpress_data:/var/www/html
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail -s -o /dev/null http://localhost/wp-login.php || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 6
+      start_period: 30s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${WP_CPU_LIMIT:-1.0}"
+          memory: ${WP_MEM_LIMIT:-512M}
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=WordPress
+      - homepage.icon=wordpress.png
+      - homepage.description=Self-hosted WordPress site
+      - homepage.ping=https://${STACK_DOMAIN}
+      - homepage.href=https://${STACK_DOMAIN}
+
+      - homepage.widget.type=customapi
+      - homepage.widget.url=https://${STACK_DOMAIN}/wp-json
+      - homepage.widget.refreshInterval=60000
+      - homepage.widget.mappings.[0].label=Site
+      - homepage.widget.mappings.[0].field=name
+      - homepage.widget.mappings.[1].label=Tagline
+      - homepage.widget.mappings.[1].field=description
+
+  wordpress-cli:
+    extends:
+      service: wordpress
+    profiles:
+      - wordpress-cli
+    image: wordpress:cli
+    hostname: wordpress-cli.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    user: "33:33"
+    entrypoint: ["/bin/bash"]
+    restart: "no"
+    networks:
+      - egress
+
+  wordpress-init:
+    extends:
+      service: wordpress-cli
+    depends_on:
+      wordpress:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        for f in /docker-entrypoint-init.d/*.sh; do
+          [ -e "$$f" ] || continue
+          echo "running $$f"
+          bash "$$f"
+        done
+    secrets:
+      - wp_admin_password
+    configs:
+      - source: wp_init_00_core
+        target: /docker-entrypoint-init.d/00-core-install.sh
+
+secrets:
+  db_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/db_password
+  wp_admin_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/wp_admin_password
+
+configs:
+  wp_php_uploads:
+    content: |
+      upload_max_filesize = ${WP_UPLOAD_MAX:-64M}
+      post_max_size = ${WP_UPLOAD_MAX:-64M}
+      memory_limit = ${WP_PHP_MEMORY:-256M}
+      max_execution_time = 300
+
+  wp_init_00_core:
+    content: |
+      set -e
+      wp core is-installed || wp core install \
+        --url="${STACK_DOMAIN}" \
+        --title="${STACK_DOMAIN}" \
+        --admin_user="${WP_ADMIN_USER:?WP_ADMIN_USER is required}" \
+        --admin_password="$$(cat /run/secrets/wp_admin_password)" \
+        --admin_email="${WP_ADMIN_EMAIL:?WP_ADMIN_EMAIL is required}" \
+        --locale="${WP_LOCALE:-en_US}" \
+        --skip-email
+
+        CURRENT="$$(wp option get permalink_structure)"
+        if [ -z "$$CURRENT" ]; then
+          wp rewrite structure '/%year%/%monthnum%/%day%/%postname%/'
+          wp rewrite flush --hard
+        fi
+
+  wp_restore_00_owner:
+    content: |
+      set -e
+      chown -R 33:33 /srv/backup/var/www/wordpress
+      find /srv/backup/var/www/wordpress -type d -exec chmod 755 {} +
+      find /srv/backup/var/www/wordpress -type f -exec chmod 644 {} +
+
+volumes:
+  wordpress_data:
+
+networks:
+  egress:

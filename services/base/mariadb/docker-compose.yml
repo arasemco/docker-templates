@@ -1,0 +1,88 @@
+include:
+  - ../backup/docker-compose.yml
+
+x-volumes: &mariadb-volumes
+  volumes:
+      - mariadb_data:/srv/backup/var/lib/mariadb
+
+services:
+  backup: *mariadb-volumes
+  restore:
+    <<: *mariadb-volumes
+    configs:
+      - source: mariadb_restore_00_owner
+        target: /docker-entrypoint-restore.d/00-mariadb-owner.sh
+
+  mariadb:
+    image: mariadb:${DB_VER:?DB_VER is required}
+    hostname: mariadb.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: unless-stopped
+    pull_policy: missing
+
+    environment:
+      MARIADB_DATABASE: ${DB_NAME:?DB_NAME is required}
+      MARIADB_USER: ${DB_USER:?DB_USER is required}
+      MARIADB_PASSWORD_FILE: /run/secrets/db_password
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+      MARIADB_AUTO_UPGRADE: "1"
+
+    secrets:
+      - db_password
+      - db_root_password
+
+    configs:
+      - source: mariadb_tuning
+        target: /etc/mysql/conf.d/tuning.cnf
+
+    volumes:
+        - mariadb_data:/var/lib/mysql
+
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 20s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${MARIADB_CPU_LIMIT:-1.0}"
+          memory: ${MARIADB_MEM_LIMIT:-1G}
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=MariaDB
+      - homepage.icon=mariadb.png
+      - homepage.description=Relational database for ${COMPOSE_PROJECT_NAME}
+
+secrets:
+  db_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/db_password
+  db_root_password:
+    file: ${SECRETS_DIR}/env/${COMPOSE_PROJECT_NAME}/db_root_password
+
+configs:
+  mariadb_tuning:
+    content: |
+      [mysqld]
+      innodb_buffer_pool_size = ${MARIADB_BUFFER_POOL:-256M}
+      max_connections = ${MARIADB_MAX_CONNECTIONS:-100}
+      slow_query_log = 1
+      long_query_time = 2
+
+  mariadb_restore_00_owner:
+    content: |
+      set -e
+      chown -R 999:999 /srv/backup/var/lib/mariadb
+      find /srv/backup/var/lib/mariadb -type d -exec chmod 700 {} +
+      find /srv/backup/var/lib/mariadb -type f -exec chmod 600 {} +
+
+volumes:
+  mariadb_data:

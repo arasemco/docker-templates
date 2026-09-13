@@ -1,0 +1,52 @@
+include:
+  - ../backup/docker-compose.yml
+
+x-volumes: &nginx-proxy-manager-volumes
+  volumes:
+    - npm_data:/srv/backup/data
+    - npm_letsencrypt:/srv/backup/letsencrypt
+
+services:
+  backup: *nginx-proxy-manager-volumes
+  restore: *nginx-proxy-manager-volumes
+
+  npm:
+    image: jc21/nginx-proxy-manager:${NPM_VER:?NPM_VER is required}
+    hostname: npm.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: unless-stopped
+    pull_policy: missing
+
+    volumes:
+      - npm_data:/data
+      - npm_letsencrypt:/etc/letsencrypt
+
+    healthcheck:
+      test: ["CMD", "/usr/bin/check-health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${NPM_CPU_LIMIT:-1.0}"
+          memory: ${NPM_MEM_LIMIT:-512M}
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=Nginx Proxy Manager
+      - homepage.icon=nginx-proxy-manager.png
+      - homepage.description=Reverse proxy and SSL certificate manager
+      - homepage.ping=https://${STACK_DOMAIN}
+      - homepage.href=https://${STACK_DOMAIN}
+
+volumes:
+  npm_data:
+  npm_letsencrypt:

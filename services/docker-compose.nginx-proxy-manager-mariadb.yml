@@ -1,0 +1,28 @@
+include:
+  - base/mariadb/docker-compose.yml
+  - base/nginx-proxy-manager/docker-compose.yml
+
+services:
+  npm:
+    environment:
+      DB_MYSQL_HOST: ${DB_HOST:?DB_HOST is required - set to the included database service's hostname}
+      DB_MYSQL_PORT: ${DB_PORT:-3306}
+      DB_MYSQL_USER: ${DB_USER:?DB_USER is required}
+      DB_MYSQL_PASSWORD__FILE: /run/secrets/db_password
+      DB_MYSQL_NAME: ${DB_NAME:?DB_NAME is required}
+    secrets:
+      - db_password
+    networks:
+      - backend
+    depends_on:
+      mariadb:
+        condition: service_healthy
+        restart: true
+
+  mariadb:
+    networks:
+      - backend
+
+networks:
+  backend:
+    internal: true
