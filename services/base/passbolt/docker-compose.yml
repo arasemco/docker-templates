@@ -49,10 +49,10 @@ services:
 
     healthcheck:
       test: ["CMD", "/usr/bin/curl", "-fk", "https://localhost/healthcheck/status"]
-      interval: 30s
-      timeout: 10s
-      retries: 6
-      start_period: 30s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
 
     deploy:
       resources:
@@ -115,14 +115,14 @@ secrets:
   db_password:
     file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/db_password
   passbolt_admin_password:
-    file: ${SECRETS_DIR}/env/${COMPOSE_PROJECT_NAME}/passbolt_admin_password
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/passbolt_admin_password
 
 configs:
   passbolt_init_00_gpg_check:
     content: |
       set -e
       if [ ! -f /etc/passbolt/gpg-keys/serverkey_private.asc ]; then
-        echo "no server key found in /etc/passbolt/gpg-keys - generate offline and place under secrets/keys/\${COMPOSE_PROJECT_NAME}/gpg/"
+        echo "no server key found in /etc/passbolt/gpg-keys - generate offline and place under secrets/keys/${COMPOSE_PROJECT_NAME}/gpg/"
         exit 1
       fi
       su -m -c "bin/cake passbolt healthcheck --gpg" -s /bin/bash www-data

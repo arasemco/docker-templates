@@ -6,13 +6,17 @@ services:
     working_dir: /srv/backup/
     stop_signal: SIGKILL
     stop_grace_period: 0s
+
     volumes:
       - backup_data:/backup:rw
+
     configs:
       - source: backup_crontab
         target: /var/spool/cron/crontabs/root
+
     command: crond -f -l 6 -L /dev/stdout
     #command: sh -c "tar czvpf /backup/${COMPOSE_PROJECT_NAME}-$$(date +%Y%m%d-%H%M%S).tar.gz --exclude='backups' -C /srv/backup ."
+
     labels:
       - homepage.group=${COMPOSE_PROJECT_NAME}
       - homepage.name=Backup
@@ -25,8 +29,10 @@ services:
     working_dir: /srv/backup/
     profiles:
       - restore
+
     volumes:
       - backup_data:/backup:ro
+
     command: >
       sh -c '
       if [ -z "$${BACKUP_FILE}" ]; then

@@ -10,7 +10,7 @@ services:
   restore:
     <<: *wordpress-volumes
     configs:
-      - source: wp_restore_00_owner
+      - source: wordpress_restore_00_owner
         target: /docker-entrypoint-restore.d/00-wordpress-owner.sh
 
   wordpress:
@@ -24,7 +24,6 @@ services:
       WORDPRESS_DB_USER: ${DB_USER:?DB_USER is required}
       WORDPRESS_DB_PASSWORD_FILE: /run/secrets/db_password
       WORDPRESS_DB_NAME: ${DB_NAME:?DB_NAME is required}
-
       WORDPRESS_TABLE_PREFIX: ${WP_TABLE_PREFIX:-wp_}
       WORDPRESS_DEBUG: ${WP_DEBUG:-0}
 
@@ -32,7 +31,7 @@ services:
       - db_password
 
     configs:
-      - source: wp_php_uploads
+      - source: wordpress_php_uploads
         target: /usr/local/etc/php/conf.d/uploads.ini
 
     volumes:
@@ -40,10 +39,10 @@ services:
 
     healthcheck:
       test: ["CMD-SHELL", "curl --fail -s -o /dev/null http://localhost/wp-login.php || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 6
-      start_period: 30s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
 
     deploy:
       resources:
@@ -83,6 +82,10 @@ services:
     user: "33:33"
     entrypoint: ["/bin/bash"]
     restart: "no"
+    healthcheck:
+      test: []
+    deploy:
+      resources: {}
     networks:
       - egress
 
@@ -104,7 +107,7 @@ services:
     secrets:
       - wp_admin_password
     configs:
-      - source: wp_init_00_core
+      - source: wordpress_init_00_core
         target: /docker-entrypoint-init.d/00-core-install.sh
 
 secrets:
@@ -114,14 +117,14 @@ secrets:
     file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/wp_admin_password
 
 configs:
-  wp_php_uploads:
+  wordpress_php_uploads:
     content: |
       upload_max_filesize = ${WP_UPLOAD_MAX:-64M}
       post_max_size = ${WP_UPLOAD_MAX:-64M}
       memory_limit = ${WP_PHP_MEMORY:-256M}
       max_execution_time = 300
 
-  wp_init_00_core:
+  wordpress_init_00_core:
     content: |
       set -e
       wp core is-installed || wp core install \
@@ -133,13 +136,13 @@ configs:
         --locale="${WP_LOCALE:-en_US}" \
         --skip-email
 
-        CURRENT="$$(wp option get permalink_structure)"
-        if [ -z "$$CURRENT" ]; then
-          wp rewrite structure '/%year%/%monthnum%/%day%/%postname%/'
-          wp rewrite flush --hard
-        fi
+      CURRENT="$$(wp option get permalink_structure)"
+      if [ -z "$$CURRENT" ]; then
+        wp rewrite structure '/%year%/%monthnum%/%day%/%postname%/'
+        wp rewrite flush --hard
+      fi
 
-  wp_restore_00_owner:
+  wordpress_restore_00_owner:
     content: |
       set -e
       chown -R 33:33 /srv/backup/var/www/wordpress

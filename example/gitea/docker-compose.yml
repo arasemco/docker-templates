@@ -1,0 +1,12 @@
+include:
+  - ../../services/docker-compose.gitea-mariadb.yml
+
+services:
+  gitea:
+    networks:
+      - frontend
+
+networks:
+  frontend:
+    name: domain_reverse-proxy
+    external: true

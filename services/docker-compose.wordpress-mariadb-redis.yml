@@ -1,13 +1,13 @@
 # Composed template: WordPress + MariaDB + Redis.
-# Wires services-base/wordpress-base.yml, services-base/mariadb-base.yml and
-# services-base/redis-base.yml together on shared networks with a
-# health-gated startup order. Include this single file from a stack's
-# docker-compose.yml; it needs no other includes alongside it.
+# Wires base/wordpress, base/mariadb and base/reids together on shared
+# networks with a health-gated startup order. Include this single file
+# from a stack's docker-compose.yml; it needs no other includes alongside
+# it.
 #
 # In the stack's .env:
 #   DB_HOST=mariadb.${STACK_DOMAIN}.local
 #   WP_REDIS_HOST=redis.${STACK_DOMAIN}.local
-# to match the hostnames mariadb-base.yml and redis-base.yml give their
+# to match the hostnames mariadb's and redis's base files give their
 # services.
 
 include:
@@ -51,14 +51,16 @@ services:
         define('WP_CACHE_KEY_SALT', 'wp_');
         define('WP_CACHE', true);
         define('WP_REDIS_MAXTTL', 3600);
+    networks:
+      - backend
 
   wordpress-init:
     extends:
       service: wordpress-cli
     configs:
-      - source: wp_init_05_redis_object_cache
+      - source: wordpress_init_05_redis_object_cache
         target: /docker-entrypoint-init.d/05-redis-object-cache.sh
-      - source: wp_init_10_cache_enabler
+      - source: wordpress_init_10_cache_enabler
         target: /docker-entrypoint-init.d/10-cache-enabler.sh
 
   mariadb:
@@ -70,7 +72,7 @@ services:
       - backend
 
 configs:
-  wp_init_05_redis_object_cache:
+  wordpress_init_05_redis_object_cache:
     content: |
       set -e
       if ! wp plugin is-installed redis-cache; then
@@ -80,7 +82,7 @@ configs:
       fi
       wp redis enable
 
-  wp_init_10_cache_enabler:
+  wordpress_init_10_cache_enabler:
     content: |
       set -e
       if ! wp plugin is-installed cache-enabler; then

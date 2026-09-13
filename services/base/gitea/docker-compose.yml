@@ -1,6 +1,5 @@
 include:
   - ../backup/docker-compose.yml
-  - ../email/docker-compose.yml
 
 x-volumes: &gitea-volumes
   volumes:
@@ -63,11 +62,6 @@ services:
       GITEA__server__LFS_START_SERVER: false
       GITEA__server__LFS_JWT_SECRET_URI: "file:/run/secrets/server_lfs_jwt_secret"
 
-      # Database (database)[https://docs.gitea.com/administration/config-cheat-sheet/#database-database]
-      GITEA__database__DB_TYPE: sqlite3
-      GITEA__database__PATH: /data/gitea/gitea.db
-      GITEA__database__LOG_SQL: false
-
       # Admin (admin)[https://docs.gitea.com/administration/config-cheat-sheet/#admin-admin]
       GITEA__admin__DEFAULT_EMAIL_NOTIFICATIONS: enabled
 
@@ -97,16 +91,6 @@ services:
       GITEA__service__ALLOW_ONLY_EXTERNAL_REGISTRATION: false
       GITEA__service__NO_REPLY_ADDRESS:
 
-      # Mailer (mailer)[https://docs.gitea.com/administration/config-cheat-sheet/#mailer-mailer]
-      GITEA__mailer__ENABLED: "true"
-      GITEA__mailer__PROTOCOL: smtp
-      GITEA__mailer__SMTP_ADDR: ${MAIL_SMTP_HOST}
-      GITEA__mailer__SMTP_PORT: ${MAIL_SMTP_PORT}
-      GITEA__mailer__FORCE_TRUST_SERVER_CERT: "false"
-      GITEA__mailer__USER: ${MAIL_SMTP_USERNAME}
-      GITEA__mailer__PASSWD__FILE: /run/secrets/mail_password
-      GITEA__mailer__FROM: GITEA <${MAIL_FROM}>
-
       # Picture (picture)[https://docs.gitea.com/administration/config-cheat-sheet/#picture-picture]
       GITEA__picture__GRAVATAR_SOURCE: gravatar
 
@@ -132,11 +116,9 @@ services:
       GITEA__actions__ENABLED: "true"
 
     secrets:
-      - db_password
       - security_secret_key
       - security_internal_token
       - server_lfs_jwt_secret
-      - mail_password
       - oauth2_jwt_secret
 
     volumes:
@@ -145,10 +127,10 @@ services:
 
     healthcheck:
       test: ["CMD-SHELL", "curl --fail -s -o /dev/null http://localhost:3000/api/healthz || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 6
-      start_period: 30s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
 
     deploy:
       resources:
@@ -267,20 +249,18 @@ services:
       - homepage.description=CI runner for Gitea Actions
 
 secrets:
-  gitea_runner_token:
-    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/runner_token
-  db_password:
-    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/db_password
   security_secret_key:
     file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/security_secret_key
   security_internal_token:
     file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/security_internal_token
-  gitea_admin_password:
-    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/gitea_admin_password
   server_lfs_jwt_secret:
     file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/server_lfs_jwt_secret
   oauth2_jwt_secret:
     file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/oauth2_jwt_secret
+  gitea_admin_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/gitea_admin_password
+  gitea_runner_token:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/runner_token
 
 configs:
   gitea_init_00_admin:

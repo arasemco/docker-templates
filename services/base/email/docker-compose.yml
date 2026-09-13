@@ -5,10 +5,8 @@ x-mail-env: &mail-env
   MAIL_SMTP_USERNAME: ${MAIL_SMTP_USERNAME:-}
   MAIL_FROM: ${MAIL_FROM:?MAIL_FROM is required}
 
-
 x-mail-secrets: &mail-secrets
   - mail_password
-
 
 secrets:
   mail_password:

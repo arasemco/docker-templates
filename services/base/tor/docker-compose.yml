@@ -15,9 +15,22 @@ services:
     hostname: tor.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
     restart: unless-stopped
     pull_policy: missing
+
     volumes:
       - tor_etc:/etc/tor
       - tor_var:/var/lib/tor
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${TOR_CPU_LIMIT:-0.5}"
+          memory: ${TOR_MEM_LIMIT:-256M}
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
     labels:
       - homepage.group=${COMPOSE_PROJECT_NAME}

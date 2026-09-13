@@ -1,6 +1,16 @@
+# Composed template: Nginx Proxy Manager + MariaDB.
+# Wires base/nginx-proxy-manager and base/mariadb together on shared
+# networks with a health-gated startup order. Include this single file
+# from a stack's docker-compose.yml; it needs no other includes alongside
+# it.
+#
+# In the stack's .env:
+#   DB_HOST=mariadb.${STACK_DOMAIN}.local
+# to match the hostname mariadb's base file gives its service.
+
 include:
-  - base/mariadb/docker-compose.yml
   - base/nginx-proxy-manager/docker-compose.yml
+  - base/mariadb/docker-compose.yml
 
 services:
   npm:

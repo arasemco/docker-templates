@@ -3,7 +3,7 @@ include:
 
 x-volumes: &mysql-volumes
   volumes:
-      - mysql_data:/srv/backup/var/lib/mysql
+    - mysql_data:/srv/backup/var/lib/mysql
 
 services:
   backup: *mysql-volumes
@@ -34,14 +34,14 @@ services:
         target: /etc/mysql/conf.d/tuning.cnf
 
     volumes:
-        - mysql_data:/var/lib/mysql
+      - mysql_data:/var/lib/mysql
 
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$(cat /run/secrets/db_root_password)"]
-      start_period: 20s
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p\"$$(cat /run/secrets/db_root_password)\""]
       interval: 10s
       timeout: 5s
       retries: 3
+      start_period: 20s
 
     deploy:
       resources:
@@ -65,7 +65,7 @@ secrets:
   db_password:
     file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/db_password
   db_root_password:
-    file: ${SECRETS_DIR}/env/${COMPOSE_PROJECT_NAME}/db_root_password
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/db_root_password
 
 configs:
   mysql_tuning:
