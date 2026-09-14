@@ -13,7 +13,7 @@
 include:
   - ../services/base/wordpress/docker-compose.yml
   - ../services/base/mariadb/docker-compose.yml
-  - ../services/base/reids/docker-compose.yml
+  - ../services/base/redis/docker-compose.yml
 
 services:
   wordpress:

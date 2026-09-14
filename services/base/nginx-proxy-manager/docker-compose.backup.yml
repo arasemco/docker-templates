@@ -11,8 +11,8 @@ services:
   restore:
     <<: *nginx-proxy-manager-volumes
     configs:
-      - source: npm_restore_00_owner
-        target: /srv/configs/restore.d/00-npm-owner.sh
+      - source: nginx-proxy-manager_restore_00_owner
+        target: /srv/configs/restore.d/00-nginx-proxy-manager-owner.sh
 
 configs:
   npm_restore_00_owner:

@@ -2,8 +2,8 @@ services:
   syslog:
     image: rsyslog/rsyslog-collector:${SYSLOG_VER:-latest}
     hostname: syslog.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
-    restart: unless-stopped
-    pull_policy: missing
+    restart: ${RESTART:-unless-stopped}
+    pull_policy: ${PULL_POLICY:-missing}
 
     environment:
       ENABLE_UDP: "${SYSLOG_ENABLE_UDP:-on}"

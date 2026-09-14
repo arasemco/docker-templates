@@ -9,7 +9,6 @@ services:
     depends_on:
       mariadb:
         condition: service_healthy
-        required: true
         restart: true
 
     networks:
