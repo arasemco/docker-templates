@@ -1,0 +1,82 @@
+services:
+  backup:
+    image: busybox:latest
+    restart: ${RESTART:-unless-stopped}
+    pull_policy: ${PULL_POLICY:-missing}
+    network_mode: none
+    stop_signal: SIGKILL
+    stop_grace_period: 0s
+
+    environment:
+      ARCHIVE_PREFIX: ${COMPOSE_PROJECT_NAME}
+
+    volumes:
+      - backup_data:/srv/archives:rw
+
+    configs:
+      - source: backup_crontab
+        target: /var/spool/cron/crontabs/root
+        mode: 0700
+      - source: backup_script
+        target: /srv/configs/backup/backup.sh
+        mode: 0700
+      - source: restore_script
+        target: /srv/configs/backup/restore.sh
+        mode: 0700
+
+    command: crond -f -l 6 -L /dev/stdout
+
+  restore:
+    restart: no
+    extends:
+      service: backup
+    environment:
+      BACKUP_FILE: ${BACKUP_FILE:-}
+    profiles:
+      - restore
+    command: /srv/configs/backup/restore.sh
+
+configs:
+  backup_crontab:
+    content: |
+      0 12 * * 3 [ $$(date +\%d) -le 7 ] && /srv/configs/backup/backup.sh
+
+  backup_script:
+    content: |
+      #!/bin/sh
+      set -e
+
+      mkdir -p /var/log/backup
+
+      TS="$$(date +%Y%m%d-%H%M%S)"
+      DATE="$$(date +%Y%m%d)"
+      TIME="$$(date +%Y-%m-%d\ %H:%M:%S)"
+      LOGFILE="/var/log/backup/$${DATE}.log"
+      ARCHIVE="/srv/archives/$${ARCHIVE_PREFIX}-$${TS}.tar.gz"
+
+      echo "[$${TIME}] backup started" | tee -a "$${LOGFILE}"
+
+      if tar czvpf "$${ARCHIVE}" --exclude='backups' -C /mnt . >> "$${LOGFILE}" 2>&1; then
+        echo "[$${TIME}] backup completed successfully" | tee -a "$${LOGFILE}"
+      else
+        echo "[$${TIME}] backup failed" | tee -a "$${LOGFILE}"
+      fi
+
+  restore_script:
+    content: |
+      #!/bin/sh
+      set -e
+
+      if [ -z "$${BACKUP_FILE}" ]; then
+        echo "BACKUP_FILE is not set. Available backups:"
+        ls -1 /srv/archives
+        exit 1
+      fi
+
+      tar xzvpf "/srv/archives/$${BACKUP_FILE}" -C /mnt
+
+      for f in /srv/configs/restore.d/*.sh; do
+        [ -e "$${f}" ] || continue
+        echo "running $${f}"
+        sh "$${f}"
+      done

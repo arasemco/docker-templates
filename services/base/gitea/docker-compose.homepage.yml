@@ -1,0 +1,21 @@
+services:
+  gitea:
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=Gitea
+      - homepage.icon=gitea.png
+      - homepage.description=Self-hosted Git service
+      - homepage.ping=https://${STACK_DOMAIN}
+      - homepage.href=https://${STACK_DOMAIN}
+
+      - homepage.widget.type=gitea
+      - homepage.widget.url=http://gitea:3000
+      - homepage.widget.key=${GITEA_HOMEPAGE_API_KEY}
+      - homepage.widget.fields=["repositories", "notifications", "issues", "pulls"]
+
+  act-runner:
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=Gitea Act Runner
+      - homepage.icon=gitea.png
+      - homepage.description=CI runner for Gitea Actions

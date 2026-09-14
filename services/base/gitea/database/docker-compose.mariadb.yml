@@ -2,8 +2,8 @@ services:
   gitea:
     environment:
       # Database (database)[https://docs.gitea.com/administration/config-cheat-sheet/#database-database]
-      GITEA__database__DB_TYPE: mysql
-      GITEA__database__HOST: mysql:3306
+      GITEA__database__DB_TYPE: mariadb
+      GITEA__database__HOST: ${DB_HOST:-mariadb:3306}
       GITEA__database__NAME: ${DB_NAME:?DB_NAME is required}
       GITEA__database__USER: ${DB_USER:?DB_USER is required}
       GITEA__database__PASSWD__FILE: /run/secrets/db_password

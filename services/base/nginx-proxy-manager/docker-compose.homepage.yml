@@ -1,0 +1,15 @@
+services:
+  npm:
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=Nginx Proxy Manager
+      - homepage.icon=nginx-proxy-manager.png
+      - homepage.description=Reverse proxy and SSL certificate manager
+      - homepage.ping=https://${STACK_DOMAIN}
+      - homepage.href=https://${STACK_DOMAIN}
+
+      - homepage.widget.type=npm
+      - homepage.widget.url=http://npm:81
+      - homepage.widget.username=${NPM_HOMEPAGE_USERNAME}
+      - homepage.widget.password=${NPM_HOMEPAGE_PASSWORD}
+      - homepage.widget.fields=["enabled", "disabled", "total"]

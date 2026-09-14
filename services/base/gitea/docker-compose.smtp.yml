@@ -2,7 +2,7 @@ services:
   gitea:
     environment:
       # Mailer (mailer)[https://docs.gitea.com/administration/config-cheat-sheet/#mailer-mailer]
-      GITEA__mailer__ENABLED: "true"
+      GITEA__mailer__ENABLED: ${MAIL_SMTP_ENABLED:-true}
       GITEA__mailer__PROTOCOL: smtp
       GITEA__mailer__SMTP_ADDR: ${MAIL_SMTP_HOST:?MAIL_SMTP_HOST is required}
       GITEA__mailer__SMTP_PORT: ${MAIL_SMTP_PORT:?MAIL_SMTP_PORT is required}

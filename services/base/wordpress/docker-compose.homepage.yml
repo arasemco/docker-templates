@@ -1,0 +1,17 @@
+services:
+  wordpress:
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=WordPress
+      - homepage.icon=wordpress.png
+      - homepage.description=Self-hosted WordPress site
+      - homepage.ping=https://${STACK_DOMAIN}
+      - homepage.href=https://${STACK_DOMAIN}
+
+      - homepage.widget.type=customapi
+      - homepage.widget.url=https://${STACK_DOMAIN}/wp-json
+      - homepage.widget.refreshInterval=60000
+      - homepage.widget.mappings.[0].label=Site
+      - homepage.widget.mappings.[0].field=name
+      - homepage.widget.mappings.[1].label=Tagline
+      - homepage.widget.mappings.[1].field=description

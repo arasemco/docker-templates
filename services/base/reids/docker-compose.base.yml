@@ -1,0 +1,40 @@
+services:
+  redis:
+    image: redis:${REDIS_VER:-alpine}
+    hostname: redis.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: ${RESTART:-unless-stopped}
+    pull_policy: ${PULL_POLICY:-missing}
+
+    command: >
+      sh -c '
+      if [ -f /run/secrets/redis_password ]; then
+        redis-server --requirepass "$$(cat /run/secrets/redis_password)" --appendonly yes;
+      else
+        redis-server --appendonly yes;
+      fi'
+
+    secrets:
+      - redis_password
+
+    volumes:
+      - redis_data:/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli --pass \"$$(cat /run/secrets/redis_password)\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${REDIS_CPU_LIMIT:-0.5}"
+          memory: ${REDIS_MEM_LIMIT:-256M}
+
+secrets:
+  redis_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/redis_password
+
+volumes:
+  redis_data:

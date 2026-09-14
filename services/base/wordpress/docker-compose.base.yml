@@ -1,0 +1,104 @@
+services:
+  wordpress:
+    image: wordpress:${WP_VER:?WP_VER is required}
+    hostname: wordpress.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: ${RESTART:-unless-stopped}
+    pull_policy: ${PULL_POLICY:-missing}
+
+    environment:
+      WORDPRESS_TABLE_PREFIX: ${WP_TABLE_PREFIX:-wp_}
+      WORDPRESS_DEBUG: ${WP_DEBUG:-0}
+
+    configs:
+      - source: wordpress_php_uploads
+        target: /usr/local/etc/php/conf.d/uploads.ini
+
+    volumes:
+      - wordpress_data:/var/www/html
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail -s -o /dev/null http://localhost/wp-login.php || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${WP_CPU_LIMIT:-1.0}"
+          memory: ${WP_MEM_LIMIT:-512M}
+
+  wordpress-cli:
+    extends:
+      service: wordpress
+    profiles:
+      - wordpress-cli
+    image: wordpress:cli
+    hostname: wordpress-cli.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    user: "33:33"
+    entrypoint: ["/bin/bash"]
+    restart: "no"
+    healthcheck:
+      test: []
+    deploy:
+      resources: {}
+    networks:
+      - egress
+
+  wordpress-init:
+    extends:
+      service: wordpress-cli
+    depends_on:
+      wordpress:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        for f in /srv/configs/init.d/*.sh; do
+          [ -e "$$f" ] || continue
+          echo "running $$f"
+          bash "$$f"
+        done
+    secrets:
+      - wp_admin_password
+    configs:
+      - source: wordpress_init_00_core
+        target: /srv/configs/init.d/00-core-install.sh
+
+secrets:
+  wp_admin_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/wp_admin_password
+
+configs:
+  wordpress_php_uploads:
+    content: |
+      upload_max_filesize = ${WP_UPLOAD_MAX:-64M}
+      post_max_size = ${WP_UPLOAD_MAX:-64M}
+      memory_limit = ${WP_PHP_MEMORY:-256M}
+      max_execution_time = 300
+
+  wordpress_init_00_core:
+    content: |
+      set -e
+      wp core is-installed || wp core install \
+        --url="${STACK_DOMAIN}" \
+        --title="${STACK_DOMAIN}" \
+        --admin_user="${WP_ADMIN_USER:?WP_ADMIN_USER is required}" \
+        --admin_password="$$(cat /run/secrets/wp_admin_password)" \
+        --admin_email="${WP_ADMIN_EMAIL:?WP_ADMIN_EMAIL is required}" \
+        --locale="${WP_LOCALE:-en_US}" \
+        --skip-email
+
+      CURRENT="$$(wp option get permalink_structure)"
+      if [ -z "$$CURRENT" ]; then
+        wp rewrite structure '/%year%/%monthnum%/%day%/%postname%/'
+        wp rewrite flush --hard
+      fi
+
+volumes:
+  wordpress_data:
+
+networks:
+  egress:

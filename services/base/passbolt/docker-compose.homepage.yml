@@ -1,0 +1,9 @@
+services:
+  passbolt:
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=Passbolt
+      - homepage.icon=passbolt.png
+      - homepage.description=Self-hosted password manager
+      - homepage.ping=https://${STACK_DOMAIN}
+      - homepage.href=https://${STACK_DOMAIN}

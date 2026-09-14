@@ -1,0 +1,7 @@
+services:
+  redis:
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=Redis
+      - homepage.icon=redis.png
+      - homepage.description=In-memory cache/data store for ${COMPOSE_PROJECT_NAME}

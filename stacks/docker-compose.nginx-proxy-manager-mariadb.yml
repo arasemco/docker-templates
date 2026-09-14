@@ -9,8 +9,8 @@
 # to match the hostname mariadb's base file gives its service.
 
 include:
-  - base/nginx-proxy-manager/docker-compose.yml
-  - base/mariadb/docker-compose.yml
+  - ../services/base/nginx-proxy-manager/docker-compose.yml
+  - ../services/base/mariadb/docker-compose.yml
 
 services:
   npm:

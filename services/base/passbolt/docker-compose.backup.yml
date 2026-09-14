@@ -1,0 +1,28 @@
+include:
+  - ../backup/docker-compose.yml
+
+x-volumes: &passbolt-volumes
+  volumes:
+    - ${SECRETS_DIR:?SECRETS_DIR is required}/keys/${COMPOSE_PROJECT_NAME}/gpg:/mnt/etc/passbolt/gpg
+    - passbolt_jwt:/mnt/etc/passbolt/jwt
+
+services:
+  backup: *passbolt-volumes
+  restore:
+    <<: *passbolt-volumes
+    configs:
+      - source: passbolt_restore_00_owner
+        target: /srv/configs/restore.d/00-passbolt-owner.sh
+
+configs:
+  passbolt_restore_00_owner:
+    content: |
+      set -e
+
+      chown -R 33:33 /mnt/etc/passbolt/gpg
+      find /mnt/etc/passbolt/gpg -type d -exec chmod 700 {} +
+      find /mnt/etc/passbolt/gpg -type f -exec chmod 600 {} +
+
+      chown -R 33:33 /mnt/etc/passbolt/jwt
+      find /mnt/etc/passbolt/jwt -type d -exec chmod 700 {} +
+      find /mnt/etc/passbolt/jwt -type f -exec chmod 600 {} +

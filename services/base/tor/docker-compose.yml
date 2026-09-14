@@ -1,43 +1,4 @@
 include:
-  - ../backup/docker-compose.yml
-
-x-volumes: &tor-volumes
-  volumes:
-    - tor_etc:/srv/backup/etc/tor
-    - tor_var:/srv/backup/var/lib/tor
-
-services:
-  backup: *tor-volumes
-  restore: *tor-volumes
-
-  tor:
-    image: ghcr.io/arasemco/tor:${TOR_VERSION:?TOR_VERSION is required}
-    hostname: tor.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
-    restart: unless-stopped
-    pull_policy: missing
-
-    volumes:
-      - tor_etc:/etc/tor
-      - tor_var:/var/lib/tor
-
-    deploy:
-      resources:
-        limits:
-          cpus: "${TOR_CPU_LIMIT:-0.5}"
-          memory: ${TOR_MEM_LIMIT:-256M}
-
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-    labels:
-      - homepage.group=${COMPOSE_PROJECT_NAME}
-      - homepage.name=Tor
-      - homepage.icon=tor.png
-      - homepage.description=Tor hidden service proxy for ${COMPOSE_PROJECT_NAME}
-
-volumes:
-  tor_etc:
-  tor_var:
+  - docker-compose.backup.yml
+  - docker-compose.base.yml
+  - docker-compose.homepage.yml

@@ -1,0 +1,14 @@
+services:
+  passbolt:
+    environment:
+      DATASOURCES_DEFAULT_HOST: ${DB_HOST:-mariadb}
+      DATASOURCES_DEFAULT_USERNAME: ${DB_USER:?DB_USER is required}
+      DATASOURCES_DEFAULT_PASSWORD_FILE: /run/secrets/db_password
+      DATASOURCES_DEFAULT_DATABASE: ${DB_NAME:?DB_NAME is required}
+
+    secrets:
+      - db_password
+
+secrets:
+  db_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/db_password

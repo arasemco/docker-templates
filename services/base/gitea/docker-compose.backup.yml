@@ -1,0 +1,28 @@
+include:
+  - ../backup/docker-compose.yml
+
+x-volumes: &gitea-volumes
+  volumes:
+    - gitea_data:/mnt/data
+    - runner_data:/mnt/runner-data
+
+services:
+  backup: *gitea-volumes
+  restore:
+    <<: *gitea-volumes
+    configs:
+      - source: gitea_restore_00_owner
+        target: /srv/configs/restore.d/00-gitea-owner.sh
+
+configs:
+  gitea_restore_00_owner:
+    content: |
+      set -e
+      
+      chown -R 1000:1000 /mnt/data
+      find /mnt/data -type d -exec chmod 755 {} +
+      find /mnt/data -type f -exec chmod 644 {} +
+
+      chown -R 1000:1000 /mnt/runner-data
+      find /mnt/runner-data -type d -exec chmod 755 {} +
+      find /mnt/runner-data -type f -exec chmod 644 {} +

@@ -1,0 +1,100 @@
+services:
+  passbolt:
+    image: passbolt/passbolt:${PASSBOLT_VERSION:?PASSBOLT_VERSION is required}
+    hostname: passbolt.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: ${RESTART:-unless-stopped}
+    pull_policy: ${PULL_POLICY:-missing}
+
+    environment:
+      APP_FULL_BASE_URL: https://${STACK_DOMAIN}
+      PASSBOLT_SSL_FORCE: "${PASSBOLT_SSL_FORCE:-true}"
+      PASSBOLT_REGISTRATION_PUBLIC: "${PASSBOLT_REGISTRATION_PUBLIC:-false}"
+
+      PASSBOLT_GPG_SERVER_KEY_FINGERPRINT: ${PASSBOLT_GPG_FINGERPRINT:?PASSBOLT_GPG_FINGERPRINT is required}
+      PASSBOLT_GPG_SERVER_KEY_PUBLIC: /etc/passbolt/gpg/serverkey.asc
+      PASSBOLT_GPG_SERVER_KEY_PRIVATE: /etc/passbolt/gpg/serverkey_private.asc
+
+    volumes:
+      - ${SECRETS_DIR:?SECRETS_DIR is required}/keys/${COMPOSE_PROJECT_NAME}/gpg:/etc/passbolt/gpg:ro
+      - passbolt_images:/usr/share/php/passbolt/webroot/img/public
+      - passbolt_jwt:/etc/passbolt/jwt
+
+    healthcheck:
+      test: ["CMD", "/usr/bin/curl", "-fk", "https://localhost/healthcheck/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${PASSBOLT_CPU_LIMIT:-1.0}"
+          memory: ${PASSBOLT_MEM_LIMIT:-512M}
+
+  passbolt-cli:
+    extends:
+      service: passbolt
+    profiles:
+      - passbolt-cli
+    entrypoint: ["/bin/bash"]
+    restart: "no"
+    healthcheck:
+      test: []
+    deploy:
+      resources: {}
+    networks:
+      - egress
+
+  passbolt-init:
+    extends:
+      service: passbolt-cli
+    depends_on:
+      passbolt:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        for f in /docker-entrypoint-init.d/*.sh; do
+          [ -e "$$f" ] || continue
+          echo "running $$f"
+          bash "$$f"
+        done
+    secrets:
+      - passbolt_admin_password
+    configs:
+      - source: passbolt_init_00_gpg_check
+        target: /docker-entrypoint-init.d/00-gpg-check.sh
+      - source: passbolt_init_10_admin
+        target: /docker-entrypoint-init.d/10-admin-register.sh
+
+secrets:
+  passbolt_admin_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/passbolt_admin_password
+
+configs:
+  passbolt_init_00_gpg_check:
+    content: |
+      set -e
+      if [ ! -f /etc/passbolt/gpg-keys/serverkey_private.asc ]; then
+        echo "no server key found in /etc/passbolt/gpg-keys - generate offline and place under secrets/keys/${COMPOSE_PROJECT_NAME}/gpg/"
+        exit 1
+      fi
+      su -m -c "bin/cake passbolt healthcheck --gpg" -s /bin/bash www-data
+
+  passbolt_init_10_admin:
+    content: |
+      set -e
+      su -m -c "bin/cake passbolt register_user \
+        -u ${PASSBOLT_ADMIN_EMAIL:?PASSBOLT_ADMIN_EMAIL is required} \
+        -f ${PASSBOLT_ADMIN_FIRSTNAME:?PASSBOLT_ADMIN_FIRSTNAME is required} \
+        -l ${PASSBOLT_ADMIN_LASTNAME:?PASSBOLT_ADMIN_LASTNAME is required} \
+        -r admin" -s /bin/bash www-data || true
+
+volumes:
+  passbolt_images:
+  passbolt_jwt:
+
+networks:
+  egress:

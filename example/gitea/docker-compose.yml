@@ -1,5 +1,5 @@
 include:
-  - ../../services/docker-compose.gitea-mariadb.yml
+  - ../../stacks/docker-compose.gitea-mariadb.yml
 
 services:
   gitea:

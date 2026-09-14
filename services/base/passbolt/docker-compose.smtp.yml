@@ -1,0 +1,16 @@
+services:
+  passbolt:
+    environment:
+      EMAIL_TRANSPORT_DEFAULT_HOST: ${MAIL_SMTP_HOST:?MAIL_SMTP_HOST is required}
+      EMAIL_TRANSPORT_DEFAULT_PORT: ${MAIL_SMTP_PORT:-587}
+      EMAIL_TRANSPORT_DEFAULT_TLS: "${MAIL_SMTP_TLS:-true}"
+      EMAIL_TRANSPORT_DEFAULT_USERNAME: ${MAIL_SMTP_USERNAME:-}
+      EMAIL_TRANSPORT_DEFAULT_PASSWORD_FILE: /run/secrets/mail_password
+      EMAIL_DEFAULT_FROM: ${MAIL_FROM:?MAIL_FROM is required}
+
+    secrets:
+      - mail_password
+
+secrets:
+  mail_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/000-generic/email/password

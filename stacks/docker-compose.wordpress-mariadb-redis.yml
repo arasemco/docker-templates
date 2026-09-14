@@ -11,9 +11,9 @@
 # services.
 
 include:
-  - base/wordpress/docker-compose.yml
-  - base/mariadb/docker-compose.yml
-  - base/reids/docker-compose.yml
+  - ../services/base/wordpress/docker-compose.yml
+  - ../services/base/mariadb/docker-compose.yml
+  - ../services/base/reids/docker-compose.yml
 
 services:
   wordpress:
@@ -29,7 +29,6 @@ services:
         define('WP_CACHE', true);
         define('WP_REDIS_MAXTTL', 3600);
     networks:
-      - frontend
       - backend
     depends_on:
       mariadb:
@@ -93,6 +92,5 @@ configs:
       wp cron event run --due-now
 
 networks:
-  frontend:
   backend:
     internal: true
