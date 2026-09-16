@@ -1,0 +1,31 @@
+name: Validate compose files
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  compose-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate dummy env for required variables
+        run: |
+          grep -rhoP '(?<=\$\{)[A-Za-z_][A-Za-z0-9_]*(?=:\?)' templates example_app \
+            | sort -u > /tmp/required-vars.txt
+          : > ci.env
+          while read -r var; do
+            echo "${var}=ci-dummy-value" >> ci.env
+          done < /tmp/required-vars.txt
+          cat ci.env
+
+      - name: Validate every stack and example_app compose file
+        run: |
+          status=0
+          for f in templates/stacks/*.yml example_app/*/docker-compose.yml; do
+            echo "== $f =="
+            docker compose --env-file "$PWD/ci.env" -f "$f" config -q || status=1
+          done
+          exit $status

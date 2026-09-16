@@ -1,5 +1,12 @@
 # Docker Compose Templates
 
+[![Test](https://github.com/arasemco/docker-templates/actions/workflows/test.yml/badge.svg)](https://github.com/arasemco/docker-templates/actions/workflows/test.yml)
+[![Lint](https://github.com/arasemco/docker-templates/actions/workflows/lint.yml/badge.svg)](https://github.com/arasemco/docker-templates/actions/workflows/lint.yml)
+[![Validate compose files](https://github.com/arasemco/docker-templates/actions/workflows/validate-compose.yml/badge.svg)](https://github.com/arasemco/docker-templates/actions/workflows/validate-compose.yml)
+[![Security](https://github.com/arasemco/docker-templates/actions/workflows/security.yml/badge.svg)](https://github.com/arasemco/docker-templates/actions/workflows/security.yml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](tools/pyproject.toml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Docker-compose templates for a set of self-hosted services — Gitea (with
 Actions CI), MariaDB, MySQL, Nginx Proxy Manager, Passbolt, Redis, rsyslog,
 Tor, and WordPress — generated from minimal YAML specs instead of
@@ -25,6 +32,25 @@ Everything under `templates/` is generated — don't hand-edit it. Each
 generated directory/file says so and points back at its spec; see
 `tools/README.md` for why the tool is structured this way and how to
 regenerate.
+
+## CI
+
+All workflows live under `.github/workflows/` and also run on demand via
+`workflow_dispatch`:
+
+- **Test** — the `tools/` pytest suite (including the golden-file
+  regression test that every spec still reproduces its committed output).
+- **Lint** — `ruff check` and `ruff format --check` over `tools/`.
+- **Validate compose files** — `docker compose config` against every
+  generated stack and every `example_app/*/docker-compose.yml`, catching
+  Compose-schema errors the generator's own YAML validation can't see.
+- **Security** — `pip-audit` against the locked `tools/` dependencies
+  (also runs weekly, since new CVEs land against already-pinned versions),
+  a `dependency-review` check on PRs, and a `gitleaks` scan for committed
+  secrets.
+
+Dependabot (`.github/dependabot.yml`) opens weekly PRs for `tools/`'s uv
+dependencies and for the Actions themselves.
 
 ## Quick start
 

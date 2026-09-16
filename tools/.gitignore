@@ -2,5 +2,9 @@ __pycache__/
 *.pyc
 .coverage
 htmlcov/
+report.html
 .pytest_cache/
+.ruff_cache/
 .venv
+requirements.txt
+ci.env

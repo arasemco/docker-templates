@@ -4,7 +4,6 @@ from docker_templates_tools.scaffold import (
     resolve_stack_spec,
 )
 
-
 # --------------------------------------------------------------------------
 # resolve_extra_service
 # --------------------------------------------------------------------------
@@ -15,7 +14,9 @@ def test_resolve_extra_service_plain_string_untouched():
 
 
 def test_resolve_extra_service_extends_shorthand_expands_and_leads():
-    svc = resolve_extra_service({"name": "wordpress-init", "extra": {"configs": ["x"]}, "extends": "wordpress-cli"})
+    svc = resolve_extra_service(
+        {"name": "wordpress-init", "extra": {"configs": ["x"]}, "extends": "wordpress-cli"}
+    )
     assert list(svc["extra"].keys()) == ["extends", "configs"]
     assert svc["extra"]["extends"] == {"service": "wordpress-cli"}
     assert svc["extra"]["configs"] == ["x"]
@@ -38,7 +39,9 @@ def test_resolve_extra_service_depends_on_full_shape_untouched():
 
 
 def test_resolve_stack_spec_single_dep_derives_includes():
-    resolved = resolve_stack_spec({"app": "npm", "dep": "mariadb", "app_slug": "nginx-proxy-manager"})
+    resolved = resolve_stack_spec(
+        {"app": "npm", "dep": "mariadb", "app_slug": "nginx-proxy-manager"}
+    )
     assert resolved["app_includes"] == ["../services/base/nginx-proxy-manager/docker-compose.yml"]
     assert resolved["deps"] == ["mariadb"]
     assert resolved["dep_includes"] == ["../services/base/mariadb/docker-compose.yml"]
@@ -95,30 +98,41 @@ def test_resolve_stack_spec_passes_through_extra_fields():
 
 
 def _base_stack_kwargs(**overrides):
-    kwargs = dict(
-        app="gitea",
-        app_includes=["../services/base/gitea/docker-compose.yml"],
-        deps=["mariadb"],
-        dep_includes=["../services/base/mariadb/docker-compose.yml"],
-    )
+    kwargs = {
+        "app": "gitea",
+        "app_includes": ["../services/base/gitea/docker-compose.yml"],
+        "deps": ["mariadb"],
+        "dep_includes": ["../services/base/mariadb/docker-compose.yml"],
+    }
     kwargs.update(overrides)
     return kwargs
 
 
 def test_render_stack_single_dep_depends_on_and_networks():
     out = render_stack(**_base_stack_kwargs())
-    assert "include:\n  - ../services/base/gitea/docker-compose.yml\n  - ../services/base/mariadb/docker-compose.yml\n" in out
+    assert (
+        "include:\n  - ../services/base/gitea/docker-compose.yml\n  - ../services/base/mariadb/docker-compose.yml\n"
+        in out
+    )
     assert "  gitea:\n    networks:\n      - backend\n" in out
-    assert "depends_on:\n      mariadb:\n        condition: service_healthy\n        restart: true\n" in out
+    assert (
+        "depends_on:\n      mariadb:\n        condition: service_healthy\n        restart: true\n"
+        in out
+    )
     assert "  mariadb:\n    networks:\n      - backend\n" in out
     assert "networks:\n  backend:\n    internal: true\n" in out
 
 
 def test_render_stack_multiple_deps_all_depended_on():
-    out = render_stack(**_base_stack_kwargs(deps=["mariadb", "redis"], dep_includes=[
-        "../services/base/mariadb/docker-compose.yml",
-        "../services/base/redis/docker-compose.yml",
-    ]))
+    out = render_stack(
+        **_base_stack_kwargs(
+            deps=["mariadb", "redis"],
+            dep_includes=[
+                "../services/base/mariadb/docker-compose.yml",
+                "../services/base/redis/docker-compose.yml",
+            ],
+        )
+    )
     assert "mariadb:\n        condition: service_healthy" in out
     assert "redis:\n        condition: service_healthy" in out
     assert "  redis:\n    networks:\n      - backend\n" in out
@@ -139,7 +153,10 @@ def test_render_stack_multiple_app_includes_use_path_list():
             ]
         )
     )
-    assert "include:\n  - path:\n      - ../services/base/gitea/docker-compose.yml\n      - ../services/base/gitea/database/docker-compose.mariadb.yml\n" in out
+    assert (
+        "include:\n  - path:\n      - ../services/base/gitea/docker-compose.yml\n      - ../services/base/gitea/database/docker-compose.mariadb.yml\n"
+        in out
+    )
 
 
 def test_render_stack_app_extra_merged_before_networks():
@@ -162,7 +179,13 @@ def test_render_stack_extra_services_string_rides_backend():
 def test_render_stack_extra_services_networks_empty_list_opts_out():
     out = render_stack(
         **_base_stack_kwargs(
-            extra_services=[{"name": "act-runner", "networks": ["runner"], "depends_on": {"gitea": {"condition": "service_healthy", "restart": True}}}]
+            extra_services=[
+                {
+                    "name": "act-runner",
+                    "networks": ["runner"],
+                    "depends_on": {"gitea": {"condition": "service_healthy", "restart": True}},
+                }
+            ]
         )
     )
     assert "  act-runner:\n    networks:\n      - runner\n    depends_on:" in out
@@ -172,7 +195,9 @@ def test_render_stack_extra_services_networks_empty_list_opts_out():
 def test_render_stack_extra_services_include_added_to_top_level_include():
     out = render_stack(
         **_base_stack_kwargs(
-            extra_services=[{"name": "act-runner", "include": "../services/base/act-runner/docker-compose.yml"}]
+            extra_services=[
+                {"name": "act-runner", "include": "../services/base/act-runner/docker-compose.yml"}
+            ]
         )
     )
     assert "  - ../services/base/act-runner/docker-compose.yml\n" in out

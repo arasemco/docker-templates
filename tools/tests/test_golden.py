@@ -26,6 +26,7 @@ def _dry_run_files(command: str, spec_path: Path) -> dict:
         [sys.executable, "-m", "docker_templates_tools", command, str(spec_path), "--dry-run"],
         cwd=TOOLS_DIR,
         capture_output=True,
+        check=False,
         text=True,
     )
     assert result.returncode == 0, result.stderr

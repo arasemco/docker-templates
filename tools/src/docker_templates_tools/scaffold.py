@@ -86,7 +86,9 @@ def _emit(
     print(f"wrote {path.relative_to(REPO_ROOT)}")
 
 
-def scaffold_service(spec: ServiceSpec, *, source: str, force: bool = False, dry_run: bool = False) -> None:
+def scaffold_service(
+    spec: ServiceSpec, *, source: str, force: bool = False, dry_run: bool = False
+) -> None:
     out_dir = SERVICES_BASE / spec.dir_name
 
     # --force regenerates the directory from scratch, not file-by-file, so
@@ -169,18 +171,28 @@ def scaffold_stack(d: dict, *, source: str, force: bool = False, dry_run: bool =
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    svc_p = sub.add_parser("service", help="scaffold a services/base/<name>/ bundle from a YAML spec")
+    svc_p = sub.add_parser(
+        "service", help="scaffold a services/base/<name>/ bundle from a YAML spec"
+    )
     svc_p.add_argument("spec", type=Path, help="path to a service spec YAML file")
     svc_p.add_argument("--force", action="store_true", help="overwrite existing files")
-    svc_p.add_argument("--dry-run", action="store_true", help="print generated files instead of writing them")
+    svc_p.add_argument(
+        "--dry-run", action="store_true", help="print generated files instead of writing them"
+    )
 
-    stack_p = sub.add_parser("stack", help="scaffold a stacks/docker-compose.<app>-<dep>.yml from a YAML spec")
+    stack_p = sub.add_parser(
+        "stack", help="scaffold a stacks/docker-compose.<app>-<dep>.yml from a YAML spec"
+    )
     stack_p.add_argument("spec", type=Path, help="path to a stack spec YAML file")
     stack_p.add_argument("--force", action="store_true", help="overwrite existing file")
-    stack_p.add_argument("--dry-run", action="store_true", help="print the generated file instead of writing it")
+    stack_p.add_argument(
+        "--dry-run", action="store_true", help="print the generated file instead of writing it"
+    )
 
     args = parser.parse_args(argv)
 

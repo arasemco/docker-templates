@@ -104,7 +104,9 @@ def test_scaffold_service_grouped_extension_writes_its_own_file(isolated_repo):
             "image": "gitea/gitea",
             "extensions": {
                 "database": {
-                    "variants": {"mariadb": {"environment": {"GITEA__database__DB_TYPE": "mariadb"}}}
+                    "variants": {
+                        "mariadb": {"environment": {"GITEA__database__DB_TYPE": "mariadb"}}
+                    }
                 }
             },
         }

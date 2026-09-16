@@ -1,0 +1,53 @@
+name: Security
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    # Dependencies don't change on a schedule, but new CVEs against
+    # already-pinned versions are disclosed all the time.
+    - cron: "0 6 * * 1"
+
+jobs:
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4
+
+  pip-audit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tools
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: tools/uv.lock
+
+      - name: Install Python
+        run: uv python install
+
+      - name: Export locked dependencies
+        run: uv export --format requirements-txt --no-hashes --no-emit-project -o requirements.txt
+
+      - name: Audit dependencies for known vulnerabilities
+        run: uvx pip-audit -r requirements.txt
+
+  secrets-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan for committed secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,6 +1,6 @@
 from docker_templates_tools.scaffold import (
-    ExtensionGroup,
     Extension,
+    ExtensionGroup,
     load_service_spec,
     render_backup,
     render_base,
@@ -11,11 +11,7 @@ from docker_templates_tools.scaffold import (
 
 def test_render_index_plain():
     out = render_index(["docker-compose.backup.yml", "docker-compose.base.yml"])
-    assert out == (
-        "include:\n"
-        "  - docker-compose.backup.yml\n"
-        "  - docker-compose.base.yml\n\n"
-    )
+    assert out == ("include:\n  - docker-compose.backup.yml\n  - docker-compose.base.yml\n\n")
 
 
 def test_render_index_with_header_comment():
@@ -61,7 +57,10 @@ def test_render_base_secret_env_var_injected_into_environment():
     out = render_base(spec)
     assert "MARIADB_PASSWORD_FILE: /run/secrets/mariadb_password" in out
     assert "secrets:\n      - mariadb_password\n" in out
-    assert "mariadb_password:\n    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/mariadb_password" in out
+    assert (
+        "mariadb_password:\n    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/mariadb_password"
+        in out
+    )
 
 
 def test_render_base_command_is_block_literal():
@@ -75,11 +74,7 @@ def test_render_base_labels_json_encodes_non_string_leaves():
         {
             "image": "gitea/gitea",
             "labels": {
-                "npm.": {
-                    "proxy.": {
-                        "host.": {"details.": {"domain_names": ["${STACK_DOMAIN}"]}}
-                    }
-                }
+                "npm.": {"proxy.": {"host.": {"details.": {"domain_names": ["${STACK_DOMAIN}"]}}}}
             },
         }
     )
@@ -148,7 +143,10 @@ def test_render_extension_grouped_variant():
     group = ExtensionGroup(key="database", grouped=True)
     variant = Extension(
         key="mariadb",
-        environment={"GITEA__database__DB_TYPE": "mariadb", "GITEA__database__HOST": "-host:mariadb:3306"},
+        environment={
+            "GITEA__database__DB_TYPE": "mariadb",
+            "GITEA__database__HOST": "-host:mariadb:3306",
+        },
         secrets=[],
     )
     out = render_extension(spec, group, variant)

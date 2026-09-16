@@ -152,6 +152,12 @@ spec under `specs/` and diffs the output byte-for-byte against the
 committed files under `templates/services/base/`/`templates/stacks/` — a change that alters
 generated output for any real spec fails there.
 
+The `Test` GitHub Actions workflow (`.github/workflows/test.yml`) runs
+this same suite on every push/PR and can be triggered manually from the
+Actions tab. `Lint` (`ruff check` + `ruff format --check`) and `Security`
+(`pip-audit` against `tools/`'s locked dependencies) run alongside it —
+see the root `README.md` for the full list of workflows.
+
 ### Naming convention: no shared "category" prefix
 
 Env vars and secrets are always prefixed by **the owning service's own

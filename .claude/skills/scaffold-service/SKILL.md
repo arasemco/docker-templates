@@ -42,6 +42,17 @@ an `AttributeError`/`KeyError` traceback instead of a clean `error: ...`
 line, check you used the right subcommand before assuming the spec itself
 is broken.
 
+CI (`.github/workflows/`) checks every push/PR against what this skill
+produces: `Test` re-runs `tools/`'s pytest suite (its golden tests fail if
+committed output doesn't match what the current specs generate — the same
+thing to watch for in step 5/regenerate-and-diff below), and `Validate
+compose files` runs `docker compose config` against every generated stack.
+That second one auto-discovers every `${FOO:?...}`-required variable
+across `templates/`/`example_app/` to build its dummy `.env`, so a new
+required variable in a spec needs no separate CI change — just run
+`cd tools && uv run pytest` yourself before pushing to catch the same
+class of failure locally first.
+
 ## Workflow: adding a new base service
 
 1. **Gather the real facts about the image first.** Don't guess: check the

@@ -18,7 +18,6 @@ their own docstrings for the stack schema.
 from __future__ import annotations
 
 import json
-from typing import Optional
 
 from .compose_yaml import (
     AlwaysQuoted,
@@ -49,7 +48,7 @@ def generated_header(source: str) -> str:
     )
 
 
-def render_index(layers: list, header_comment: Optional[str] = None) -> str:
+def render_index(layers: list, header_comment: str | None = None) -> str:
     lines = []
     if header_comment:
         lines.extend(comment_block(header_comment))
@@ -107,7 +106,9 @@ def render_stacks_readme() -> str:
 def render_base(spec: ServiceSpec) -> str:
     lines = ["services:", f"  {spec.service_name}:"]
     lines.append(f"    image: {spec.image}:{spec.tag_env}")
-    lines.append(f"    hostname: {spec.service_name}.${{STACK_DOMAIN:?STACK_DOMAIN is required}}.local")
+    lines.append(
+        f"    hostname: {spec.service_name}.${{STACK_DOMAIN:?STACK_DOMAIN is required}}.local"
+    )
     lines.append("    restart: ${RESTART:-unless-stopped}")
     lines.append("    pull_policy: ${PULL_POLICY:-missing}")
 
@@ -145,7 +146,14 @@ def render_base(spec: ServiceSpec) -> str:
             for v in spec.volumes
         ]
         for bm in spec.bind_mounts:
-            vol_list.append({"type": "bind", "source": bm.source, "target": bm.target, "read_only": bm.read_only})
+            vol_list.append(
+                {
+                    "type": "bind",
+                    "source": bm.source,
+                    "target": bm.target,
+                    "read_only": bm.read_only,
+                }
+            )
         lines.extend(frag({"volumes": vol_list}, 4))
 
     if spec.healthcheck:
@@ -173,7 +181,9 @@ def render_base(spec: ServiceSpec) -> str:
                 "deploy": {
                     "resources": {
                         "limits": {
-                            "cpus": AlwaysQuoted(f"${{{spec.upper}_CPU_LIMIT:-{spec.cpu_default}}}"),
+                            "cpus": AlwaysQuoted(
+                                f"${{{spec.upper}_CPU_LIMIT:-{spec.cpu_default}}}"
+                            ),
                             "memory": f"${{{spec.upper}_MEM_LIMIT:-{spec.mem_default}}}",
                         }
                     }
@@ -236,7 +246,9 @@ def render_backup(spec: ServiceSpec) -> str:
     # tarred and restored. Only the ones that also have owner: get a
     # chown/chmod step — a volume can be backed up without its ownership
     # being fixed on restore, if that's not needed.
-    participants = [(v.name, v) for v in spec.backup_volumes] + [(bm.source, bm) for bm in spec.backup_binds]
+    participants = [(v.name, v) for v in spec.backup_volumes] + [
+        (bm.source, bm) for bm in spec.backup_binds
+    ]
     owned = [(source, p) for source, p in participants if p.owner is not None]
     anchor = f"{spec.dir_name}-volumes"
 
@@ -275,7 +287,11 @@ def render_backup(spec: ServiceSpec) -> str:
             script_lines.append(f"find {p.backup_target} -type f -exec chmod {p.mod.files} {{}} +")
         script = "\n".join(script_lines) + "\n"
 
-        lines.extend(frag({"configs": {f"{spec.dir_name}_restore_00_owner": {"content": Literal(script)}}}, 0))
+        lines.extend(
+            frag(
+                {"configs": {f"{spec.dir_name}_restore_00_owner": {"content": Literal(script)}}}, 0
+            )
+        )
 
     lines.append("")
     return "\n".join(lines)
@@ -368,12 +384,12 @@ def render_stack(
     app_includes: list,
     deps: list,
     dep_includes: list,
-    app_networks: Optional[list] = None,
-    dep_networks: Optional[list] = None,
-    app_extra: Optional[dict] = None,
-    extra_services: Optional[list] = None,
-    extra: Optional[dict] = None,
-    header_comment: Optional[str] = None,
+    app_networks: list | None = None,
+    dep_networks: list | None = None,
+    app_extra: dict | None = None,
+    extra_services: list | None = None,
+    extra: dict | None = None,
+    header_comment: str | None = None,
 ) -> str:
     """A stack, not a service spec, owns every network attachment — no
     service spec declares its own `networks:`. `app`/`deps` always get

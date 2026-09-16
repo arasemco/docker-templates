@@ -16,13 +16,16 @@ scaffold-service = "docker_templates_tools:main"
 
 [dependency-groups]
 test = ["pytest>=8.0"]
-dev = ["pytest-cov>=5.0", "pytest-html>=4.0"]
+dev = ["pytest-cov>=5.0", "pytest-html>=4.0", "ruff>=0.14.0"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
 [tool.coverage.run]
 source = ["src/docker_templates_tools"]
+
+[tool.ruff]
+line-length = 100
 
 [build-system]
 requires = ["uv_build>=0.12.13,<0.13.0"]

@@ -38,7 +38,11 @@ def test_tag_required_renders_required_shorthand():
 
 def test_dir_prefix_overrides_dir_name_only():
     spec = load_service_spec(
-        {"image": "jc21/nginx-proxy-manager", "service": {"name": "npm"}, "dir_prefix": "nginx-proxy-manager"}
+        {
+            "image": "jc21/nginx-proxy-manager",
+            "service": {"name": "npm"},
+            "dir_prefix": "nginx-proxy-manager",
+        }
     )
     assert spec.dir_name == "nginx-proxy-manager"
     assert spec.service_name == "npm"
@@ -139,7 +143,9 @@ def test_config_name_is_service_prefixed():
     spec = load_service_spec(
         {
             "image": "mariadb",
-            "configs": [{"name": "tuning", "target": "/etc/mysql/conf.d/tuning.cnf", "content": "x"}],
+            "configs": [
+                {"name": "tuning", "target": "/etc/mysql/conf.d/tuning.cnf", "content": "x"}
+            ],
         }
     )
     (config,) = spec.configs
@@ -147,9 +153,7 @@ def test_config_name_is_service_prefixed():
 
 
 def test_healthcheck_defaults():
-    spec = load_service_spec(
-        {"image": "mariadb", "healthcheck": {"test": ["CMD", "true"]}}
-    )
+    spec = load_service_spec({"image": "mariadb", "healthcheck": {"test": ["CMD", "true"]}})
     assert spec.healthcheck.interval == "10s"
     assert spec.healthcheck.timeout == "5s"
     assert spec.healthcheck.retries == 3

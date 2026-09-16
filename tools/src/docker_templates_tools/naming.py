@@ -64,13 +64,13 @@ def flatten_prefixed(d: dict, prefix: str = "") -> dict:
     return result
 
 
-def secret_full_name(secret: "Secret", prefix: str) -> str:
+def secret_full_name(secret: Secret, prefix: str) -> str:
     if secret.bare:
         return secret.suffix
     return f"{prefix.lower()}_{secret.suffix}"
 
 
-def secret_file(secret: "Secret", prefix: str) -> str:
+def secret_file(secret: Secret, prefix: str) -> str:
     if secret.shared:
         return f"${{SECRETS_DIR:?SECRETS_DIR is required}}/env/000-generic/{prefix.lower()}/{secret.suffix}"
     return f"${{SECRETS_DIR:?SECRETS_DIR is required}}/env/${{COMPOSE_PROJECT_NAME}}/{secret.name}"

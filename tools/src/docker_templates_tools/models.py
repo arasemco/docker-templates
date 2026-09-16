@@ -34,8 +34,6 @@ paths, label defaults like homepage's icon filename) is computed here:
 
 from __future__ import annotations
 
-from typing import Optional
-
 from attrs import Factory, define, field
 
 from .labels import apply_label_defaults
@@ -60,12 +58,14 @@ class VolumeMode:
 @define
 class Volume:
     suffix: str  # short key, e.g. "data" -> compose name "<service>_data"
-    path: str    # real mount path inside the container
+    path: str  # real mount path inside the container
     backup: bool = False  # include this volume in the backup/restore x-volumes anchor
-    owner: Optional[VolumeOwner] = None  # only meaningful when backup=True: also chown/chmod on restore
+    owner: VolumeOwner | None = (
+        None  # only meaningful when backup=True: also chown/chmod on restore
+    )
     mod: VolumeMode = Factory(VolumeMode)
     read_only: bool = False
-    backup_target: Optional[str] = None  # override; else /mnt/<service> ("data") or /mnt<path>
+    backup_target: str | None = None  # override; else /mnt/<service> ("data") or /mnt<path>
 
     name: str = field(init=False, default="")
 
@@ -79,17 +79,19 @@ class BindMount:
     target: str
     read_only: bool = False
     backup: bool = False  # include this mount in the backup/restore x-volumes anchor
-    owner: Optional[VolumeOwner] = None  # only meaningful when backup=True: also chown/chmod on restore
+    owner: VolumeOwner | None = (
+        None  # only meaningful when backup=True: also chown/chmod on restore
+    )
     mod: VolumeMode = Factory(VolumeMode)
-    backup_target: Optional[str] = None  # override; else /mnt<target>
+    backup_target: str | None = None  # override; else /mnt<target>
 
 
 @define
 class Secret:
     suffix: str  # short key, e.g. "password" -> "db_password" (service/variant-prefixed)
-    env_var: Optional[str] = None  # adds "<env_var>: /run/secrets/<full name>" to environment
-    shared: bool = False           # not per-project; lives under env/000-generic/<prefix>/<suffix>
-    bare: bool = False             # skip the prefix entirely; name = suffix verbatim
+    env_var: str | None = None  # adds "<env_var>: /run/secrets/<full name>" to environment
+    shared: bool = False  # not per-project; lives under env/000-generic/<prefix>/<suffix>
+    bare: bool = False  # skip the prefix entirely; name = suffix verbatim
     # (see gitea's security_secret_key/security_internal_token/etc — unlike
     # redis_password or db_password, these aren't prefixed by anything)
 
@@ -101,7 +103,7 @@ class Config:
     suffix: str  # short key, e.g. "tuning" -> "mariadb_tuning" (service-prefixed)
     target: str
     content: str
-    mode: Optional[str] = None
+    mode: str | None = None
 
     name: str = field(init=False, default="")
 
@@ -135,25 +137,35 @@ class ExtensionGroup:
 @define
 class ServiceSpec:
     image: str
-    description: Optional[str] = None
-    service_name: Optional[str] = None  # falls back to image's last path segment
-    display_name: Optional[str] = None  # falls back to service_name, title-cased
+    description: str | None = None
+    service_name: str | None = None  # falls back to image's last path segment
+    display_name: str | None = None  # falls back to service_name, title-cased
     tag_required: bool = False
     tag_default: str = "latest"
-    command: Optional[str] = None
-    environment: dict = Factory(dict)   # short-key -> shorthand value
-    secrets: list = Factory(list)       # list[Secret]
-    configs: list = Factory(list)       # list[Config]
-    volumes: list = Factory(list)       # list[Volume]
-    bind_mounts: list = Factory(list)   # list[BindMount] — passthrough mounts (e.g. a secrets-dir path)
-    healthcheck: Optional[Healthcheck] = None
+    command: str | None = None
+    environment: dict = Factory(dict)  # short-key -> shorthand value
+    secrets: list = Factory(list)  # list[Secret]
+    configs: list = Factory(list)  # list[Config]
+    volumes: list = Factory(list)  # list[Volume]
+    bind_mounts: list = Factory(
+        list
+    )  # list[BindMount] — passthrough mounts (e.g. a secrets-dir path)
+    healthcheck: Healthcheck | None = None
     cpu_default: str = "1.0"
     mem_default: str = "512M"
-    extra: dict = Factory(dict)         # arbitrary extra top-level service keys, merged in verbatim (e.g. logging:)
-    dir_prefix: Optional[str] = None  # overrides service_name for the output directory + restore-script/anchor naming
-    labels: dict = Factory(dict)  # flat key: value, same shape/nesting as `environment` — see apply_label_defaults
-    header_comment: Optional[str] = None  # plain multi-line text, rendered as a leading comment block on docker-compose.yml
-    extensions: list = Factory(list)     # list[ExtensionGroup]
+    extra: dict = Factory(
+        dict
+    )  # arbitrary extra top-level service keys, merged in verbatim (e.g. logging:)
+    dir_prefix: str | None = (
+        None  # overrides service_name for the output directory + restore-script/anchor naming
+    )
+    labels: dict = Factory(
+        dict
+    )  # flat key: value, same shape/nesting as `environment` — see apply_label_defaults
+    header_comment: str | None = (
+        None  # plain multi-line text, rendered as a leading comment block on docker-compose.yml
+    )
+    extensions: list = Factory(list)  # list[ExtensionGroup]
 
     def __attrs_post_init__(self) -> None:
         if self.service_name is None:
@@ -270,7 +282,12 @@ def load_service_spec(d: dict) -> ServiceSpec:
 
     secrets = [_load_secret(s) for s in d.get("secrets", [])]
     configs = [
-        Config(suffix=c["suffix"] if "suffix" in c else c["name"], target=c["target"], content=c["content"], mode=c.get("mode"))
+        Config(
+            suffix=c["suffix"] if "suffix" in c else c["name"],
+            target=c["target"],
+            content=c["content"],
+            mode=c.get("mode"),
+        )
         for c in d.get("configs", [])
     ]
 
