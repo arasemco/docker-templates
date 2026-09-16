@@ -1,0 +1,19 @@
+# Auto-injected label defaults for services/base/*/docker-compose.base.yml.
+#
+# When a service's flattened `labels:` includes at least one key matching a
+# group's `pattern`, any of that group's `defaults` keys not already present
+# in the spec get added. A spec always wins over a default — this only ever
+# fills in what's missing.
+#
+# Default values may use %(name)s-style placeholders, substituted per
+# service: display_name, service_name, description (capitalized, falling
+# back to display_name when the spec gives no description). "${...}" is a
+# literal compose variable reference, left untouched.
+
+homepage:
+  pattern: "homepage."
+  defaults:
+    homepage.group: "${COMPOSE_PROJECT_NAME}"
+    homepage.name: "%(display_name)s"
+    homepage.icon: "%(service_name)s.png"
+    homepage.description: "%(description)s for ${COMPOSE_PROJECT_NAME}"

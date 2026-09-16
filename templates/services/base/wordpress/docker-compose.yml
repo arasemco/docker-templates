@@ -1,0 +1,12 @@
+# Auto-generated from templates/specs/services/wordpress.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+# WordPress — self-hosted CMS.
+# Needs the mariadb database extension picked by the consuming stack;
+# redis object-cache wiring (if any) is stack-specific and lives in the
+# stack spec's app_extra, not here.
+
+include:
+  - docker-compose.backup.yml
+  - docker-compose.base.yml
+

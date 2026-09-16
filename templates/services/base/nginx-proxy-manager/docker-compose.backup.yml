@@ -1,0 +1,30 @@
+# Auto-generated from templates/specs/services/nginx-proxy-manager.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+include:
+  - ../backup/docker-compose.yml
+
+x-volumes: &nginx-proxy-manager-volumes
+  volumes:
+    - npm_data:/mnt/data
+    - npm_letsencrypt:/mnt/letsencrypt
+
+services:
+  backup: *nginx-proxy-manager-volumes
+  restore:
+    <<: *nginx-proxy-manager-volumes
+    configs:
+      - source: nginx-proxy-manager_restore_00_owner
+        target: /srv/configs/restore.d/00-nginx-proxy-manager-owner.sh
+
+configs:
+  nginx-proxy-manager_restore_00_owner:
+    content: |
+      set -e
+      chown -R root:root /mnt/data
+      find /mnt/data -type d -exec chmod 755 {} +
+      find /mnt/data -type f -exec chmod 644 {} +
+
+      chown -R root:root /mnt/letsencrypt
+      find /mnt/letsencrypt -type d -exec chmod 755 {} +
+      find /mnt/letsencrypt -type f -exec chmod 644 {} +

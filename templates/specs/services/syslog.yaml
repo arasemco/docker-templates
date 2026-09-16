@@ -1,0 +1,47 @@
+image: rsyslog/rsyslog-collector
+
+service:
+  name: syslog
+
+environment:
+  ENABLE_UDP: "-udp:on"
+  ENABLE_TCP: "-tcp:on"
+  ENABLE_RELP: "-relp:off"
+  WRITE_ALL_FILE: "-write_all_file:on"
+  WRITE_JSON_FILE: "-write_json_file:on"
+  RSYSLOG_HOSTNAME: "syslog.${STACK_DOMAIN}.local"
+
+configs:
+  - name: rules
+    target: /etc/rsyslog.d/60-custom.conf
+    content: |
+      # Additional rsyslog rules layered on top of the rsyslog-collector
+      # image's packaged defaults. Empty by default; add per-deployment
+      # filtering or routing rules here.
+
+volumes:
+  data:
+    path: /var/log
+    backup_target: /mnt/var/log
+    backup: true
+    owner:
+      uid: root
+      gid: root
+    mod:
+      dirs: 755
+      files: 644
+
+healthcheck:
+  test: ["CMD-SHELL", "pgrep rsyslogd || exit 1"]
+
+cpu_default: "0.5"
+mem_default: "256M"
+
+labels:
+  homepage.:
+    description: "Centralized syslog collector for ${COMPOSE_PROJECT_NAME}"
+
+header_comment: |
+  rsyslog collector — centralized syslog sink for every other stack's
+  containers to log to. Ships with UDP/TCP syslog listeners enabled and
+  RELP disabled; extra filtering/routing rules go in the `rules` config.

@@ -1,0 +1,29 @@
+[project]
+name = "docker-templates-tools"
+version = "0.1.0"
+description = "Scaffolding for this repo's docker-compose service/stack templates"
+authors = [
+    { name = "asemo", email = "aram.semo@asemo.pro" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "attrs>=26.1.0",
+    "pyyaml>=6.0.3",
+]
+
+[project.scripts]
+scaffold-service = "docker_templates_tools:main"
+
+[dependency-groups]
+test = ["pytest>=8.0"]
+dev = ["pytest-cov>=5.0", "pytest-html>=4.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["src/docker_templates_tools"]
+
+[build-system]
+requires = ["uv_build>=0.12.13,<0.13.0"]
+build-backend = "uv_build"

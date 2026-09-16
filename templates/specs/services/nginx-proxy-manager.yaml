@@ -1,0 +1,69 @@
+image: jc21/nginx-proxy-manager
+tag_required: true
+
+service:
+  name: npm
+
+display:
+  name: Nginx Proxy Manager
+
+dir_prefix: nginx-proxy-manager
+
+volumes:
+  data:
+    path: /data
+    backup_target: /mnt/data
+    backup: true
+    owner:
+      uid: root
+      gid: root
+    mod:
+      dirs: 755
+      files: 644
+  letsencrypt:
+    path: /etc/letsencrypt
+    backup_target: /mnt/letsencrypt
+    backup: true
+    owner:
+      uid: root
+      gid: root
+    mod:
+      dirs: 755
+      files: 644
+
+healthcheck:
+  test: ["CMD", "/usr/bin/check-health"]
+
+cpu_default: "1.0"
+mem_default: "512M"
+
+labels:
+  homepage.:
+    description: "Reverse proxy and SSL certificate manager"
+    ping: "https://${STACK_DOMAIN}"
+    href: "https://${STACK_DOMAIN}"
+    widget.:
+      type: npm
+      url: "http://npm:81"
+      username: "${NPM_HOMEPAGE_USERNAME}"
+      password: "${NPM_HOMEPAGE_PASSWORD}"
+      fields: '["enabled", "disabled", "total"]'
+
+extensions:
+  database:
+    variants:
+      mariadb:
+        environment:
+          DB_MYSQL_:
+            HOST: "-host:mariadb"
+            PORT: "-port:3306"
+            NAME: "?name"
+            USER: "?user"
+        secrets:
+          - name: password
+            env_var: DB_MYSQL_PASSWORD__FILE
+
+header_comment: |
+  Nginx Proxy Manager — reverse proxy and Let's Encrypt certificate manager
+  fronting every other stack's hostnames. Its own admin database is wired
+  through the mariadb database extension, same as any other consumer.

@@ -1,0 +1,74 @@
+image: passbolt/passbolt
+tag_required: true
+
+environment:
+  APP_FULL_BASE_URL: "https://${STACK_DOMAIN}"
+  PASSBOLT_SSL_FORCE: "-ssl_force:true"
+  PASSBOLT_REGISTRATION_PUBLIC: "-registration_public:false"
+  PASSBOLT_GPG_SERVER_KEY_:
+    FINGERPRINT: "?gpg_fingerprint"
+    PUBLIC: /etc/passbolt/gpg/serverkey.asc
+    PRIVATE: /etc/passbolt/gpg/serverkey_private.asc
+
+volumes:
+  images:
+    path: /usr/share/php/passbolt/webroot/img/public
+  jwt:
+    path: /etc/passbolt/jwt
+    backup: true
+    owner:
+      uid: 33
+      gid: 33
+
+bind_mounts:
+  - source: "${SECRETS_DIR:?SECRETS_DIR is required}/keys/${COMPOSE_PROJECT_NAME}/gpg"
+    target: /etc/passbolt/gpg
+    backup: true
+    owner:
+      uid: 33
+      gid: 33
+
+healthcheck:
+  test: ["CMD", "/usr/bin/curl", "-fk", "https://localhost/healthcheck/status"]
+
+cpu_default: "1.0"
+mem_default: "512M"
+
+labels:
+  homepage.:
+    description: "Self-hosted password manager"
+    ping: "https://${STACK_DOMAIN}"
+    href: "https://${STACK_DOMAIN}"
+
+extensions:
+  database:
+    variants:
+      mariadb:
+        environment:
+          DATASOURCES_DEFAULT_:
+            HOST: "-host:mariadb:3306"
+            DATABASE: "?name"
+            USERNAME: "?user"
+        secrets:
+          - name: password
+            env_var: DATASOURCES_DEFAULT_PASSWORD_FILE
+  smtp:
+    environment:
+      EMAIL_:
+        TRANSPORT_DEFAULT_:
+          HOST: "?host"
+          PORT: "-port:587"
+          TLS: "-tls:true"
+          USERNAME: "-user:"
+        DEFAULT_FROM: "?from"
+    secrets:
+      - name: password
+        env_var: EMAIL_TRANSPORT_DEFAULT_PASSWORD_FILE
+        shared: true
+
+header_comment: |
+  Passbolt — self-hosted password manager.
+  Needs its GPG server key pair placed under the shared secrets dir before
+  first boot (see PASSBOLT_GPG_SERVER_KEY_FINGERPRINT); the database and
+  outbound-mail extensions are optional add-ons, picked by the consuming
+  stack.

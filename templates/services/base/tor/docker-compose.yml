@@ -1,0 +1,11 @@
+# Auto-generated from templates/specs/services/tor.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+# Tor hidden service proxy — exposes another stack's service as a .onion
+# address without opening any port publicly. No environment/secrets of its
+# own; everything is configured through the `etc` volume's torrc.
+
+include:
+  - docker-compose.backup.yml
+  - docker-compose.base.yml
+

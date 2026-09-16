@@ -1,0 +1,28 @@
+app: gitea
+dep: mariadb
+
+extensions:
+  database: mariadb
+
+custom: false
+
+app_networks:
+  - runner
+
+extra_services:
+  - gitea-cli
+  - name: gitea-init
+    networks: []
+    extends: gitea-cli
+  - name: act-runner
+    include: ../services/base/act-runner/docker-compose.yml
+    networks:
+      - runner
+    depends_on: gitea
+
+header_comment: |
+  Composed template: Gitea + MariaDB + Act Runner.
+  Wires base/gitea, base/mariadb, and base/act-runner together on shared
+  networks with a health-gated startup order. Include this single file
+  from a stack's docker-compose.yml; it needs no other includes alongside
+  it.

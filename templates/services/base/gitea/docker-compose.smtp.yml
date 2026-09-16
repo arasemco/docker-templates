@@ -1,0 +1,21 @@
+# Auto-generated from templates/specs/services/gitea.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  gitea:
+    environment:
+      GITEA__mailer__ENABLED: ${SMTP_ENABLED:-true}
+      GITEA__mailer__PROTOCOL: smtp
+      GITEA__mailer__SMTP_ADDR: ${SMTP_HOST:?SMTP_HOST is required}
+      GITEA__mailer__SMTP_PORT: ${SMTP_PORT:?SMTP_PORT is required}
+      GITEA__mailer__FORCE_TRUST_SERVER_CERT: ${SMTP_FORCE_TRUST_SERVER_CERT:-false}
+      GITEA__mailer__USER: ${SMTP_USERNAME}
+      GITEA__mailer__FROM: GITEA <${SMTP_FROM}>
+      GITEA__mailer__PASSWD__FILE: /run/secrets/smtp_password
+
+    secrets:
+      - smtp_password
+
+secrets:
+  smtp_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/000-generic/smtp/password

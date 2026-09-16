@@ -1,7 +1,0 @@
-services:
-  mysql:
-    labels:
-      - homepage.group=${COMPOSE_PROJECT_NAME}
-      - homepage.name=MySQL
-      - homepage.icon=mysql.png
-      - homepage.description=Relational database for ${COMPOSE_PROJECT_NAME}

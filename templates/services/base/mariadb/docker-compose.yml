@@ -1,0 +1,12 @@
+# Auto-generated from templates/specs/services/mariadb.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+# MariaDB — relational database server.
+# Each consuming service gets its own database/user (MARIADB_DATABASE/
+# MARIADB_USER) and its own `password`/`root_password` secrets — there's no
+# shared root account across stacks.
+
+include:
+  - docker-compose.backup.yml
+  - docker-compose.base.yml
+

@@ -1,0 +1,55 @@
+# Auto-generated from templates/specs/services/redis.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  redis:
+    image: redis:${REDIS_TAG:-alpine}
+    hostname: redis.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: ${RESTART:-unless-stopped}
+    pull_policy: ${PULL_POLICY:-missing}
+
+    command: |
+      sh -c '
+      if [ -f /run/secrets/redis_password ]; then
+        redis-server --requirepass "$$(cat /run/secrets/redis_password)" --appendonly yes;
+      else
+        redis-server --appendonly yes;
+      fi'
+
+    secrets:
+      - redis_password
+
+    volumes:
+      - type: volume
+        source: redis_data
+        target: /data
+        read_only: false
+
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli --pass \"$$(cat /run/secrets/redis_password)\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${REDIS_CPU_LIMIT:-0.5}"
+          memory: ${REDIS_MEM_LIMIT:-256M}
+
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=Redis
+      - homepage.icon=redis.png
+      - homepage.description=In-memory cache/data store for ${COMPOSE_PROJECT_NAME}
+
+secrets:
+  redis_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/redis_password
+
+volumes:
+  redis_data:
+    labels:
+      - pro.asemo.description=Redis data directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=redis

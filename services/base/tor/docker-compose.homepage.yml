@@ -1,7 +1,0 @@
-services:
-  tor:
-    labels:
-      - homepage.group=${COMPOSE_PROJECT_NAME}
-      - homepage.name=Tor
-      - homepage.icon=tor.png
-      - homepage.description=Tor hidden service proxy for ${COMPOSE_PROJECT_NAME}

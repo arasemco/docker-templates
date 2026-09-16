@@ -1,0 +1,55 @@
+# Auto-generated from templates/specs/services/nginx-proxy-manager.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  npm:
+    image: jc21/nginx-proxy-manager:${NPM_TAG:?NPM_TAG is required}
+    hostname: npm.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: ${RESTART:-unless-stopped}
+    pull_policy: ${PULL_POLICY:-missing}
+
+    volumes:
+      - type: volume
+        source: npm_data
+        target: /data
+        read_only: false
+      - type: volume
+        source: npm_letsencrypt
+        target: /etc/letsencrypt
+        read_only: false
+
+    healthcheck:
+      test: ["CMD", "/usr/bin/check-health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${NPM_CPU_LIMIT:-1.0}"
+          memory: ${NPM_MEM_LIMIT:-512M}
+
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=Nginx Proxy Manager
+      - homepage.icon=npm.png
+      - homepage.description=Reverse proxy and SSL certificate manager
+      - homepage.ping=https://${STACK_DOMAIN}
+      - homepage.href=https://${STACK_DOMAIN}
+      - homepage.widget.type=npm
+      - homepage.widget.url=http://npm:81
+      - homepage.widget.username=${NPM_HOMEPAGE_USERNAME}
+      - homepage.widget.password=${NPM_HOMEPAGE_PASSWORD}
+      - homepage.widget.fields=["enabled", "disabled", "total"]
+
+volumes:
+  npm_data:
+    labels:
+      - pro.asemo.description=Nginx Proxy Manager data directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=npm
+  npm_letsencrypt:
+    labels:
+      - pro.asemo.description=Nginx Proxy Manager letsencrypt directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=npm

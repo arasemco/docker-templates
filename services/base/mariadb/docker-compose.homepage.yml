@@ -1,7 +1,0 @@
-services:
-  mariadb:
-    labels:
-      - homepage.group=${COMPOSE_PROJECT_NAME}
-      - homepage.name=MariaDB
-      - homepage.icon=mariadb.png
-      - homepage.description=Relational database for ${COMPOSE_PROJECT_NAME}

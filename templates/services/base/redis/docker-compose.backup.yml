@@ -1,0 +1,25 @@
+# Auto-generated from templates/specs/services/redis.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+include:
+  - ../backup/docker-compose.yml
+
+x-volumes: &redis-volumes
+  volumes:
+    - redis_data:/mnt/redis
+
+services:
+  backup: *redis-volumes
+  restore:
+    <<: *redis-volumes
+    configs:
+      - source: redis_restore_00_owner
+        target: /srv/configs/restore.d/00-redis-owner.sh
+
+configs:
+  redis_restore_00_owner:
+    content: |
+      set -e
+      chown -R 999:999 /mnt/redis
+      find /mnt/redis -type d -exec chmod 700 {} +
+      find /mnt/redis -type f -exec chmod 600 {} +

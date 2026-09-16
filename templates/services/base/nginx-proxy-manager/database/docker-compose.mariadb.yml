@@ -1,0 +1,18 @@
+# Auto-generated from templates/specs/services/nginx-proxy-manager.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  npm:
+    environment:
+      DB_MYSQL_HOST: ${MARIADB_HOST:-mariadb}
+      DB_MYSQL_PORT: ${MARIADB_PORT:-3306}
+      DB_MYSQL_NAME: ${MARIADB_NAME:?MARIADB_NAME is required}
+      DB_MYSQL_USER: ${MARIADB_USER:?MARIADB_USER is required}
+      DB_MYSQL_PASSWORD__FILE: /run/secrets/mariadb_password
+
+    secrets:
+      - mariadb_password
+
+secrets:
+  mariadb_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/mariadb_password

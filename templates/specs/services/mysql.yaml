@@ -1,0 +1,49 @@
+image: mysql
+tag_required: true
+
+display:
+  name: MySQL
+
+environment:
+  MYSQL_DATABASE: "?name"
+  MYSQL_USER: "?user"
+
+secrets:
+  - name: password
+    env_var: MYSQL_PASSWORD_FILE
+  - name: root_password
+    env_var: MYSQL_ROOT_PASSWORD_FILE
+
+configs:
+  - name: tuning
+    target: /etc/mysql/conf.d/tuning.cnf
+    content: |
+      [mysqld]
+      innodb_buffer_pool_size = ${MYSQL_BUFFER_POOL:-256M}
+      max_connections = ${MYSQL_MAX_CONNECTIONS:-100}
+      slow_query_log = 1
+      long_query_time = 2
+
+volumes:
+  data:
+    path: /var/lib/mysql
+    backup_target: /mnt/var/lib/mysql
+    backup: true
+    owner:
+      uid: 999
+      gid: 999
+
+healthcheck:
+  test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p\"$$(cat /run/secrets/mysql_root_password)\""]
+
+cpu_default: "1.0"
+mem_default: "1G"
+
+labels:
+  homepage.:
+    description: "Relational database for ${COMPOSE_PROJECT_NAME}"
+
+header_comment: |
+  MySQL — relational database server.
+  Same per-project database/user/secrets pattern as mariadb; pick whichever
+  engine a consuming service's database extension actually supports.

@@ -1,0 +1,11 @@
+# Auto-generated from templates/specs/services/nginx-proxy-manager.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+# Nginx Proxy Manager — reverse proxy and Let's Encrypt certificate manager
+# fronting every other stack's hostnames. Its own admin database is wired
+# through the mariadb database extension, same as any other consumer.
+
+include:
+  - docker-compose.backup.yml
+  - docker-compose.base.yml
+

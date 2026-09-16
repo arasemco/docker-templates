@@ -1,7 +1,0 @@
-services:
-  backup:
-    labels:
-      - homepage.group=${COMPOSE_PROJECT_NAME}
-      - homepage.name=Backup
-      - homepage.icon=mdi-backup-restore
-      - homepage.description=Scheduled backup job for ${COMPOSE_PROJECT_NAME}

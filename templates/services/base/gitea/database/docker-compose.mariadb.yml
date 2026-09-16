@@ -1,0 +1,20 @@
+# Auto-generated from templates/specs/services/gitea.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  gitea:
+    environment:
+      GITEA__database__DB_TYPE: mariadb
+      GITEA__database__HOST: ${MARIADB_HOST:-mariadb:3306}
+      GITEA__database__NAME: ${MARIADB_NAME:?MARIADB_NAME is required}
+      GITEA__database__USER: ${MARIADB_USER:?MARIADB_USER is required}
+      GITEA__database__SSL_MODE: ${MARIADB_SSL_MODE:-disable}
+      GITEA__database__LOG_SQL: ${MARIADB_LOG_SQL:-false}
+      GITEA__database__PASSWD__FILE: /run/secrets/mariadb_password
+
+    secrets:
+      - mariadb_password
+
+secrets:
+  mariadb_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/mariadb_password

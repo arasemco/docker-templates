@@ -1,0 +1,11 @@
+# Auto-generated from templates/specs/services/syslog.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+# rsyslog collector — centralized syslog sink for every other stack's
+# containers to log to. Ships with UDP/TCP syslog listeners enabled and
+# RELP disabled; extra filtering/routing rules go in the `rules` config.
+
+include:
+  - docker-compose.backup.yml
+  - docker-compose.base.yml
+

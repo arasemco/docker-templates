@@ -1,0 +1,63 @@
+services:
+  passbolt-cli:
+    extends:
+      service: passbolt
+    profiles:
+      - passbolt-cli
+    entrypoint: ["/bin/bash"]
+    restart: "no"
+    healthcheck:
+      test: []
+    deploy:
+      resources: {}
+    networks:
+      - egress
+
+  passbolt-init:
+    extends:
+      service: passbolt-cli
+    depends_on:
+      passbolt:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        for f in /docker-entrypoint-init.d/*.sh; do
+          [ -e "$$f" ] || continue
+          echo "running $$f"
+          bash "$$f"
+        done
+    secrets:
+      - passbolt_admin_password
+    configs:
+      - source: passbolt_init_00_gpg_check
+        target: /docker-entrypoint-init.d/00-gpg-check.sh
+      - source: passbolt_init_10_admin
+        target: /docker-entrypoint-init.d/10-admin-register.sh
+
+secrets:
+  passbolt_admin_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/passbolt_admin_password
+
+configs:
+  passbolt_init_00_gpg_check:
+    content: |
+      set -e
+      if [ ! -f /etc/passbolt/gpg-keys/serverkey_private.asc ]; then
+        echo "no server key found in /etc/passbolt/gpg-keys - generate offline and place under secrets/keys/${COMPOSE_PROJECT_NAME}/gpg/"
+        exit 1
+      fi
+      su -m -c "bin/cake passbolt healthcheck --gpg" -s /bin/bash www-data
+
+  passbolt_init_10_admin:
+    content: |
+      set -e
+      su -m -c "bin/cake passbolt register_user \
+        -u ${PASSBOLT_ADMIN_EMAIL:?PASSBOLT_ADMIN_EMAIL is required} \
+        -f ${PASSBOLT_ADMIN_FIRSTNAME:?PASSBOLT_ADMIN_FIRSTNAME is required} \
+        -l ${PASSBOLT_ADMIN_LASTNAME:?PASSBOLT_ADMIN_LASTNAME is required} \
+        -r admin" -s /bin/bash www-data || true
+
+networks:
+  egress:

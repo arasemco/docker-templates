@@ -1,0 +1,70 @@
+# Auto-generated from templates/specs/services/act-runner.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  act-runner:
+    image: gitea/act_runner:${ACT_RUNNER_TAG:?ACT_RUNNER_TAG is required}
+    hostname: act-runner.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: ${RESTART:-unless-stopped}
+    pull_policy: ${PULL_POLICY:-missing}
+
+    environment:
+      DOCKER_HOST: unix:///var/run/docker.sock
+      GITEA_INSTANCE_URL: https://${STACK_DOMAIN}
+      GITEA_RUNNER_NAME: act-runner-${HOSTNAME:-local}
+      GITEA_RUNNER_LABELS: docker,ubuntu-latest:docker://catthehacker/ubuntu:act-latest,ubuntu-22.04:docker://catthehacker/ubuntu:act-22.04,ubuntu-20.04:docker://catthehacker/ubuntu:act-20.04
+      GITEA_RUNNER_CACHE_DIR: /cache
+      GITEA_RUNNER_OFFLINE: ${ACT_RUNNER_OFFLINE:-false}
+      GITEA_RUNNER_VERBOSE: ${ACT_RUNNER_VERBOSE:-true}
+      GITEA_RUNNER_REGISTRATION_TOKEN_FILE: /run/secrets/act-runner_registration_token
+
+    secrets:
+      - act-runner_registration_token
+
+    volumes:
+      - type: volume
+        source: act-runner_data
+        target: /data
+        read_only: false
+      - type: volume
+        source: act-runner_cache
+        target: /cache
+        read_only: false
+      - type: volume
+        source: act-runner_act_cache
+        target: /root/.cache/act
+        read_only: false
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+        read_only: false
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${ACT_RUNNER_CPU_LIMIT:-1.0}"
+          memory: ${ACT_RUNNER_MEM_LIMIT:-1G}
+
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=Gitea Act Runner
+      - homepage.icon=gitea.png
+      - homepage.description=CI runner for Gitea Actions
+
+secrets:
+  act-runner_registration_token:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/act-runner_registration_token
+
+volumes:
+  act-runner_data:
+    labels:
+      - pro.asemo.description=Gitea Act Runner data directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=act-runner
+  act-runner_cache:
+    labels:
+      - pro.asemo.description=Gitea Act Runner cache directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=act-runner
+  act-runner_act_cache:
+    labels:
+      - pro.asemo.description=Gitea Act Runner act_cache directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=act-runner

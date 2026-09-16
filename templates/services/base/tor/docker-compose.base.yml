@@ -1,0 +1,41 @@
+# Auto-generated from templates/specs/services/tor.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  tor:
+    image: ghcr.io/arasemco/tor:${TOR_TAG:?TOR_TAG is required}
+    hostname: tor.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: ${RESTART:-unless-stopped}
+    pull_policy: ${PULL_POLICY:-missing}
+
+    volumes:
+      - type: volume
+        source: tor_etc
+        target: /etc/tor
+        read_only: false
+      - type: volume
+        source: tor_var
+        target: /var/lib/tor
+        read_only: false
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${TOR_CPU_LIMIT:-0.5}"
+          memory: ${TOR_MEM_LIMIT:-256M}
+
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=Tor
+      - homepage.icon=tor.png
+      - homepage.description=Tor hidden service proxy for ${COMPOSE_PROJECT_NAME}
+
+volumes:
+  tor_etc:
+    labels:
+      - pro.asemo.description=Tor etc directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=tor
+  tor_var:
+    labels:
+      - pro.asemo.description=Tor var directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=tor

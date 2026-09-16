@@ -1,0 +1,53 @@
+image: gitea/act_runner
+tag_required: true
+
+service:
+  name: act-runner
+
+display:
+  name: Gitea Act Runner
+
+environment:
+  DOCKER_HOST: unix:///var/run/docker.sock
+  GITEA_INSTANCE_URL: "https://${STACK_DOMAIN}"
+  GITEA_RUNNER_:
+    NAME: "act-runner-${HOSTNAME:-local}"
+    LABELS: "docker,ubuntu-latest:docker://catthehacker/ubuntu:act-latest,ubuntu-22.04:docker://catthehacker/ubuntu:act-22.04,ubuntu-20.04:docker://catthehacker/ubuntu:act-20.04"
+    CACHE_DIR: /cache
+    OFFLINE: "-offline:false"
+    VERBOSE: "-verbose:true"
+
+secrets:
+  - name: registration_token
+    env_var: GITEA_RUNNER_REGISTRATION_TOKEN_FILE
+
+volumes:
+  data:
+    path: /data
+    backup: true
+    owner:
+      uid: 1000
+      gid: 1000
+  cache:
+    path: /cache
+  act_cache:
+    path: /root/.cache/act
+
+bind_mounts:
+  - source: /var/run/docker.sock
+    target: /var/run/docker.sock
+
+cpu_default: "1.0"
+mem_default: "1G"
+
+labels:
+  homepage.:
+    description: "CI runner for Gitea Actions"
+    icon: gitea.png
+
+header_comment: |
+  Gitea Act Runner — self-hosted CI runner for Gitea Actions.
+  Registers against gitea using a registration_token secret, and runs jobs
+  by talking to the host's docker socket (bind-mounted, not DinD). Only
+  ever wired in alongside gitea, via tools/specs/stacks/gitea-mariadb.yaml —
+  never included as a standalone service.

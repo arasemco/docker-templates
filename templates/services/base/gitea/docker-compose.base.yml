@@ -1,0 +1,162 @@
+# Auto-generated from templates/specs/services/gitea.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  gitea:
+    image: gitea/gitea:${GITEA_TAG:?GITEA_TAG is required}
+    hostname: gitea.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: ${RESTART:-unless-stopped}
+    pull_policy: ${PULL_POLICY:-missing}
+
+    environment:
+      USER_UID: "1000"
+      USER_GID: "1000"
+      GITEA____APP_NAME: 'Gitea: Git with a cup of tea from ${STACK_DOMAIN}'
+      GITEA____WORK_PATH: /data/gitea
+      GITEA____RUN_USER: git
+      GITEA____RUN_MODE: prod
+      GITEA__admin__DEFAULT_EMAIL_NOTIFICATIONS: enabled
+      GITEA__picture__GRAVATAR_SOURCE: gravatar
+      GITEA__repository__ROOT: /data/git/repositories
+      GITEA__repository__SCRIPT_TYPE: bash
+      GITEA__repository__DISABLE_HTTP_GIT: ${GITEA_DISABLE_HTTP_GIT:-false}
+      GITEA__repository__PREFERRED_LICENSES: ${GITEA_PREFERRED_LICENSES:-Apache License 2.0,MIT License}
+      GITEA__repository__DEFAULT_BRANCH: ${GITEA_DEFAULT_BRANCH:-main}
+      GITEA__repository__DEFAULT_PUSH_CREATE_PRIVATE: ${GITEA_DEFAULT_PUSH_CREATE_PRIVATE:-true}
+      GITEA__repository__ENABLE_PUSH_CREATE_ORG: ${GITEA_ENABLE_PUSH_CREATE_ORG:-true}
+      GITEA__repository__ENABLE_PUSH_CREATE_USER: ${GITEA_ENABLE_PUSH_CREATE_USER:-true}
+      GITEA__repository.signing__INITIAL_COMMIT: ${GITEA_SIGNING_INITIAL_COMMIT:-always}
+      GITEA__repository.signing__CRUD_ACTIONS: ${GITEA_SIGNING_CRUD_ACTIONS:-pubkey,twofa,parentsigned}
+      GITEA__repository.signing__WIKI: ${GITEA_SIGNING_WIKI:-never}
+      GITEA__repository.signing__MERGES: ${GITEA_SIGNING_MERGES:-pubkey,twofa,basesigned,commitssigned}
+      GITEA__repository.signing__SIGNING_KEY: ${GITEA_SIGNING_KEY:-default}
+      GITEA__repository.signing__SIGNING_NAME: ${GITEA_SIGNING_NAME:-}
+      GITEA__repository.signing__SIGNING_EMAIL: ${GITEA_SIGNING_EMAIL:-}
+      GITEA__server__APP_DATA_PATH: /data/gitea
+      GITEA__server__DOMAIN: ${STACK_DOMAIN}
+      GITEA__server__ROOT_URL: https://${STACK_DOMAIN}
+      GITEA__server__LOCAL_ROOT_URL: http://gitea:3000
+      GITEA__server__DISABLE_SSH: false
+      GITEA__server__LANDING_PAGE: explore
+      GITEA__server__LFS_START_SERVER: false
+      GITEA__server__LFS_JWT_SECRET_URI: file:/run/secrets/server_lfs_jwt_secret
+      GITEA__server__HTTP_ADDR: 0.0.0.0
+      GITEA__server__HTTP_PORT: 3000
+      GITEA__server__SSH_DOMAIN: ${STACK_DOMAIN}
+      GITEA__server__SSH_PORT: 22
+      GITEA__server__SSH_LISTEN_HOST: 0.0.0.0
+      GITEA__server__SSH_LISTEN_PORT: 22
+      GITEA__security__INSTALL_LOCK: true
+      GITEA__security__SECRET_KEY_URI: file:/run/secrets/security_secret_key
+      GITEA__security__INTERNAL_TOKEN_URI: file:/run/secrets/security_internal_token
+      GITEA__security__MIN_PASSWORD_LENGTH: 32
+      GITEA__security__PASSWORD_CHECK_PWN: false
+      GITEA__security__PASSWORD_HASH_ALGO: pbkdf2
+      GITEA__security__PASSWORD_COMPLEXITY: lower,upper,digit,spec
+      GITEA__security__REVERSE_PROXY_LIMIT: 1
+      GITEA__security__REVERSE_PROXY_TRUSTED_PROXIES: 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+      GITEA__service__DISABLE_REGISTRATION: false
+      GITEA__service__REQUIRE_SIGNIN_VIEW: false
+      GITEA__service__ENABLE_NOTIFY_MAIL: true
+      GITEA__service__ENABLE_PASSKEY_AUTHENTICATION: true
+      GITEA__service__REGISTER_EMAIL_CONFIRM: true
+      GITEA__service__REGISTER_MANUAL_CONFIRM: true
+      GITEA__service__DEFAULT_KEEP_EMAIL_PRIVATE: false
+      GITEA__service__DEFAULT_ALLOW_CREATE_ORGANIZATION: true
+      GITEA__service__DEFAULT_USER_IS_RESTRICTED: true
+      GITEA__service__DEFAULT_ENABLE_TIMETRACKING: true
+      GITEA__service__ALLOW_ONLY_INTERNAL_REGISTRATION: true
+      GITEA__service__ALLOW_ONLY_EXTERNAL_REGISTRATION: false
+      GITEA__service__NO_REPLY_ADDRESS: ""
+      GITEA__log__ROOT_PATH: /data/gitea/log
+      GITEA__log__MODE: console
+      GITEA__log__LEVEL: info
+      GITEA__cron__ENABLED: true
+      GITEA__cron__RUN_AT_START: true
+      GITEA__cron.update_checker__ENABLED: true
+      GITEA__oauth2__JWT_SECRET_URI: file:/run/secrets/oauth2_jwt_secret
+      GITEA__packages__ENABLED: "true"
+      GITEA__actions__ENABLED: "true"
+
+    secrets:
+      - security_secret_key
+      - security_internal_token
+      - server_lfs_jwt_secret
+      - oauth2_jwt_secret
+
+    volumes:
+      - type: volume
+        source: gitea_data
+        target: /data
+        read_only: false
+      - type: bind
+        source: ${SECRETS_DIR:?SECRETS_DIR is required}/keys/${COMPOSE_PROJECT_NAME}/gpg
+        target: /data/gitea/home/.gnupg
+        read_only: false
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail -s -o /dev/null http://localhost:3000/api/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${GITEA_CPU_LIMIT:-1.0}"
+          memory: ${GITEA_MEM_LIMIT:-512M}
+
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=Gitea
+      - homepage.icon=gitea.png
+      - homepage.description=Self-hosted Git service
+      - homepage.ping=https://${STACK_DOMAIN}
+      - homepage.href=https://${STACK_DOMAIN}
+      - homepage.widget.type=gitea
+      - homepage.widget.url=http://gitea:3000
+      - homepage.widget.key=${GITEA_HOMEPAGE_API_KEY}
+      - homepage.widget.fields=["repositories", "notifications", "issues", "pulls"]
+      - npm.proxy.host.details.domain_names=["${STACK_DOMAIN}"]
+      - npm.proxy.host.details.scheme=http
+      - npm.proxy.host.details.forward.host=gitea
+      - npm.proxy.host.details.forward.port=3000
+      - npm.proxy.host.details.access_list=HomeIP
+      - npm.proxy.host.details.options.cache_assets=false
+      - npm.proxy.host.details.options.block_common_exploits=true
+      - npm.proxy.host.details.options.websockets_support=true
+      - npm.proxy.host.advanced=real_ip_header CF-Connecting-IP;
+      - npm.proxy.host.custom_locations.location=/test
+      - npm.proxy.host.custom_locations.scheme=http
+      - npm.proxy.host.custom_locations.forwardhost=tset
+      - npm.proxy.host.custom_locations.forwardport=3001
+      - npm.proxy.host.custom_locations.advanced=some custom nginx conf
+      - npm.proxy.host.ssl.certificate=*.asemo.pro, asemo.pro
+      - npm.proxy.host.ssl.force=true
+      - npm.proxy.host.ssl.http2_support=true
+      - npm.proxy.host.ssl.hsts_enabled=true
+      - npm.proxy.host.ssl.hsts_sub-domains=false
+      - npm.proxy.host.ssl.advanced.trust_upstream_forwarded_proto_headers=false
+
+secrets:
+  security_secret_key:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/security_secret_key
+  security_internal_token:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/security_internal_token
+  server_lfs_jwt_secret:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/server_lfs_jwt_secret
+  oauth2_jwt_secret:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/oauth2_jwt_secret
+
+volumes:
+  gitea_data:
+    labels:
+      - pro.asemo.description=Gitea data directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=gitea

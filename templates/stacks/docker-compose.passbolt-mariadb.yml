@@ -1,0 +1,38 @@
+# Auto-generated from templates/specs/stacks/passbolt-mariadb.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+# Composed template: Passbolt + MariaDB.
+# Wires base/passbolt and base/mariadb together on shared networks with a
+# health-gated startup order. Include this single file from a stack's
+# docker-compose.yml; it needs no other includes alongside it.
+
+include:
+  - path:
+      - ../services/base/passbolt/docker-compose.yml
+      - ../services/base/passbolt/database/docker-compose.mariadb.yml
+  - ../services/base/mariadb/docker-compose.yml
+
+services:
+  passbolt:
+    networks:
+      - backend
+    depends_on:
+      mariadb:
+        condition: service_healthy
+        restart: true
+
+  passbolt-cli:
+    networks:
+      - backend
+
+  passbolt-init:
+    extends:
+      service: passbolt-cli
+
+  mariadb:
+    networks:
+      - backend
+
+networks:
+  backend:
+    internal: true

@@ -1,0 +1,11 @@
+# Auto-generated from templates/specs/services/mysql.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+# MySQL — relational database server.
+# Same per-project database/user/secrets pattern as mariadb; pick whichever
+# engine a consuming service's database extension actually supports.
+
+include:
+  - docker-compose.backup.yml
+  - docker-compose.base.yml
+

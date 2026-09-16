@@ -1,0 +1,62 @@
+# Auto-generated from templates/specs/services/passbolt.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  passbolt:
+    image: passbolt/passbolt:${PASSBOLT_TAG:?PASSBOLT_TAG is required}
+    hostname: passbolt.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: ${RESTART:-unless-stopped}
+    pull_policy: ${PULL_POLICY:-missing}
+
+    environment:
+      APP_FULL_BASE_URL: https://${STACK_DOMAIN}
+      PASSBOLT_SSL_FORCE: ${PASSBOLT_SSL_FORCE:-true}
+      PASSBOLT_REGISTRATION_PUBLIC: ${PASSBOLT_REGISTRATION_PUBLIC:-false}
+      PASSBOLT_GPG_SERVER_KEY_FINGERPRINT: ${PASSBOLT_GPG_FINGERPRINT:?PASSBOLT_GPG_FINGERPRINT is required}
+      PASSBOLT_GPG_SERVER_KEY_PUBLIC: /etc/passbolt/gpg/serverkey.asc
+      PASSBOLT_GPG_SERVER_KEY_PRIVATE: /etc/passbolt/gpg/serverkey_private.asc
+
+    volumes:
+      - type: volume
+        source: passbolt_images
+        target: /usr/share/php/passbolt/webroot/img/public
+        read_only: false
+      - type: volume
+        source: passbolt_jwt
+        target: /etc/passbolt/jwt
+        read_only: false
+      - type: bind
+        source: ${SECRETS_DIR:?SECRETS_DIR is required}/keys/${COMPOSE_PROJECT_NAME}/gpg
+        target: /etc/passbolt/gpg
+        read_only: false
+
+    healthcheck:
+      test: ["CMD", "/usr/bin/curl", "-fk", "https://localhost/healthcheck/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${PASSBOLT_CPU_LIMIT:-1.0}"
+          memory: ${PASSBOLT_MEM_LIMIT:-512M}
+
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=Passbolt
+      - homepage.icon=passbolt.png
+      - homepage.description=Self-hosted password manager
+      - homepage.ping=https://${STACK_DOMAIN}
+      - homepage.href=https://${STACK_DOMAIN}
+
+volumes:
+  passbolt_images:
+    labels:
+      - pro.asemo.description=Passbolt images directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=passbolt
+  passbolt_jwt:
+    labels:
+      - pro.asemo.description=Passbolt jwt directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=passbolt

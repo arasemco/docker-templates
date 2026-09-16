@@ -1,0 +1,55 @@
+services:
+  gitea-cli:
+    extends:
+      service: gitea
+    profiles:
+      - gitea-cli
+    entrypoint: ["/bin/bash"]
+    user: "1000:1000"
+    restart: "no"
+    healthcheck:
+      test: []
+    deploy:
+      resources: {}
+    networks:
+      - egress
+
+  gitea-init:
+    extends:
+      service: gitea-cli
+    depends_on:
+      gitea:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        for f in /srv/configs/init.d/*.sh; do
+          [ -e "$$f" ] || continue
+          echo "running $$f"
+          bash "$$f"
+        done
+    secrets:
+      - gitea_admin_password
+    configs:
+      - source: gitea_init_00_admin
+        target: /srv/configs/init.d/00-admin-create.sh
+
+secrets:
+  gitea_admin_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/gitea_admin_password
+
+configs:
+  gitea_init_00_admin:
+    content: |
+      set -e
+      gitea admin user list --admin | grep -qw "${GITEA_ADMIN_USER:?GITEA_ADMIN_USER is required}" || \
+      gitea admin user create \
+        --username "${GITEA_ADMIN_USER}" \
+        --password "$$(cat /run/secrets/gitea_admin_password)" \
+        --email "${GITEA_ADMIN_EMAIL:?GITEA_ADMIN_EMAIL is required}" \
+        --admin \
+        --must-change-password=false
+
+networks:
+  egress:

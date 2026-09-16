@@ -1,0 +1,59 @@
+# Auto-generated from templates/specs/services/syslog.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  syslog:
+    image: rsyslog/rsyslog-collector:${SYSLOG_TAG:-latest}
+    hostname: syslog.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: ${RESTART:-unless-stopped}
+    pull_policy: ${PULL_POLICY:-missing}
+
+    environment:
+      ENABLE_UDP: ${SYSLOG_UDP:-on}
+      ENABLE_TCP: ${SYSLOG_TCP:-on}
+      ENABLE_RELP: ${SYSLOG_RELP:-off}
+      WRITE_ALL_FILE: ${SYSLOG_WRITE_ALL_FILE:-on}
+      WRITE_JSON_FILE: ${SYSLOG_WRITE_JSON_FILE:-on}
+      RSYSLOG_HOSTNAME: syslog.${STACK_DOMAIN}.local
+
+    configs:
+      - source: syslog_rules
+        target: /etc/rsyslog.d/60-custom.conf
+
+    volumes:
+      - type: volume
+        source: syslog_data
+        target: /var/log
+        read_only: false
+
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep rsyslogd || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${SYSLOG_CPU_LIMIT:-0.5}"
+          memory: ${SYSLOG_MEM_LIMIT:-256M}
+
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=Syslog
+      - homepage.icon=syslog.png
+      - homepage.description=Centralized syslog collector for ${COMPOSE_PROJECT_NAME}
+
+configs:
+  syslog_rules:
+    content: |
+      # Additional rsyslog rules layered on top of the rsyslog-collector
+      # image's packaged defaults. Empty by default; add per-deployment
+      # filtering or routing rules here.
+
+volumes:
+  syslog_data:
+    labels:
+      - pro.asemo.description=Syslog data directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=syslog

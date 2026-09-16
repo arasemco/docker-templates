@@ -1,0 +1,12 @@
+include:
+  - ../../templates/stacks/docker-compose.wordpress-mariadb-redis.yml
+
+services:
+  wordpress:
+    networks:
+      - frontend
+
+networks:
+  frontend:
+    name: domain_reverse-proxy
+    external: true

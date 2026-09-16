@@ -1,0 +1,28 @@
+image: ghcr.io/arasemco/tor
+tag_required: true
+
+volumes:
+  etc:
+    path: /etc/tor
+    backup: true
+    owner:
+      uid: 101
+      gid: 101
+  var:
+    path: /var/lib/tor
+    backup: true
+    owner:
+      uid: 101
+      gid: 101
+
+cpu_default: "0.5"
+mem_default: "256M"
+
+labels:
+  homepage.:
+    description: "Tor hidden service proxy for ${COMPOSE_PROJECT_NAME}"
+
+header_comment: |
+  Tor hidden service proxy — exposes another stack's service as a .onion
+  address without opening any port publicly. No environment/secrets of its
+  own; everything is configured through the `etc` volume's torrc.

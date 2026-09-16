@@ -1,0 +1,19 @@
+# Auto-generated from templates/specs/services/passbolt.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  passbolt:
+    environment:
+      EMAIL_TRANSPORT_DEFAULT_HOST: ${SMTP_HOST:?SMTP_HOST is required}
+      EMAIL_TRANSPORT_DEFAULT_PORT: ${SMTP_PORT:-587}
+      EMAIL_TRANSPORT_DEFAULT_TLS: ${SMTP_TLS:-true}
+      EMAIL_TRANSPORT_DEFAULT_USERNAME: ${SMTP_USER:-}
+      EMAIL_DEFAULT_FROM: ${SMTP_FROM:?SMTP_FROM is required}
+      EMAIL_TRANSPORT_DEFAULT_PASSWORD_FILE: /run/secrets/smtp_password
+
+    secrets:
+      - smtp_password
+
+secrets:
+  smtp_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/000-generic/smtp/password

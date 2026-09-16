@@ -1,0 +1,20 @@
+# Auto-generated from templates/specs/services/gitea.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  gitea:
+    environment:
+      GITEA__database__DB_TYPE: mysql
+      GITEA__database__HOST: ${MYSQL_HOST:-mysql:3306}
+      GITEA__database__NAME: ${MYSQL_NAME:?MYSQL_NAME is required}
+      GITEA__database__USER: ${MYSQL_USER:?MYSQL_USER is required}
+      GITEA__database__SSL_MODE: ${MYSQL_SSL_MODE:-disable}
+      GITEA__database__LOG_SQL: ${MYSQL_LOG_SQL:-false}
+      GITEA__database__PASSWD__FILE: /run/secrets/mysql_password
+
+    secrets:
+      - mysql_password
+
+secrets:
+  mysql_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/mysql_password

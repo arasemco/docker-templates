@@ -1,0 +1,17 @@
+# Auto-generated from templates/specs/services/wordpress.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  wordpress:
+    environment:
+      WORDPRESS_DB_HOST: ${MARIADB_HOST:-mariadb}
+      WORDPRESS_DB_USER: ${MARIADB_USER:?MARIADB_USER is required}
+      WORDPRESS_DB_NAME: ${MARIADB_NAME:?MARIADB_NAME is required}
+      WORDPRESS_DB_PASSWORD_FILE: /run/secrets/mariadb_password
+
+    secrets:
+      - mariadb_password
+
+secrets:
+  mariadb_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/mariadb_password

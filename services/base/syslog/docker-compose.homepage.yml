@@ -1,7 +1,0 @@
-services:
-  syslog:
-    labels:
-      - homepage.group=${COMPOSE_PROJECT_NAME}
-      - homepage.name=Syslog
-      - homepage.icon=rsyslog.png
-      - homepage.description=Centralized syslog collector for ${COMPOSE_PROJECT_NAME}

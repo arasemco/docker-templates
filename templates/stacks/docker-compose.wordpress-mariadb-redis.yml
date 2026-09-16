@@ -1,0 +1,70 @@
+# Auto-generated from templates/specs/stacks/wordpress-mariadb-redis.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+# Composed template: WordPress + MariaDB + Redis.
+# Wires base/wordpress, base/mariadb and base/redis together on shared
+# networks with a health-gated startup order. Include this single file
+# from a stack's docker-compose.yml; it needs no other includes alongside
+# it.
+
+include:
+  - path:
+      - ../services/base/wordpress/docker-compose.yml
+      - ../services/base/wordpress/database/docker-compose.mariadb.yml
+  - ../services/base/mariadb/docker-compose.yml
+  - ../services/base/redis/docker-compose.yml
+
+services:
+  wordpress:
+    secrets:
+      - redis_password
+    environment:
+      WORDPRESS_CONFIG_EXTRA: |
+        define('WP_REDIS_HOST', 'redis');
+        define('WP_REDIS_PORT', 6379);
+        define('WP_REDIS_PASSWORD', trim(file_get_contents('/run/secrets/redis_password')));
+        define('WP_REDIS_DATABASE', 0);
+        define('WP_CACHE_KEY_SALT', 'wp_');
+        define('WP_CACHE', true);
+        define('WP_REDIS_MAXTTL', 3600);
+    networks:
+      - backend
+    depends_on:
+      mariadb:
+        condition: service_healthy
+        restart: true
+      redis:
+        condition: service_healthy
+        restart: true
+
+  mariadb:
+    networks:
+      - backend
+
+  redis:
+    networks:
+      - backend
+
+configs:
+  wordpress_init_05_redis_object_cache:
+    content: |
+      set -e
+      if ! wp plugin is-installed redis-cache; then
+        wp plugin install redis-cache --activate
+      elif ! wp plugin is-active redis-cache; then
+        wp plugin activate redis-cache
+      fi
+      wp redis enable
+  wordpress_init_10_cache_enabler:
+    content: |
+      set -e
+      if ! wp plugin is-installed cache-enabler; then
+        wp plugin install cache-enabler --activate
+      elif ! wp plugin is-active cache-enabler; then
+        wp plugin activate cache-enabler
+      fi
+      wp cron event run --due-now
+
+networks:
+  backend:
+    internal: true

@@ -1,0 +1,69 @@
+# Auto-generated from templates/specs/services/mysql.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  mysql:
+    image: mysql:${MYSQL_TAG:?MYSQL_TAG is required}
+    hostname: mysql.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: ${RESTART:-unless-stopped}
+    pull_policy: ${PULL_POLICY:-missing}
+
+    environment:
+      MYSQL_DATABASE: ${MYSQL_NAME:?MYSQL_NAME is required}
+      MYSQL_USER: ${MYSQL_USER:?MYSQL_USER is required}
+      MYSQL_PASSWORD_FILE: /run/secrets/mysql_password
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
+
+    secrets:
+      - mysql_password
+      - mysql_root_password
+
+    configs:
+      - source: mysql_tuning
+        target: /etc/mysql/conf.d/tuning.cnf
+
+    volumes:
+      - type: volume
+        source: mysql_data
+        target: /var/lib/mysql
+        read_only: false
+
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p\"$$(cat /run/secrets/mysql_root_password)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${MYSQL_CPU_LIMIT:-1.0}"
+          memory: ${MYSQL_MEM_LIMIT:-1G}
+
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=MySQL
+      - homepage.icon=mysql.png
+      - homepage.description=Relational database for ${COMPOSE_PROJECT_NAME}
+
+secrets:
+  mysql_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/mysql_password
+  mysql_root_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/mysql_root_password
+
+configs:
+  mysql_tuning:
+    content: |
+      [mysqld]
+      innodb_buffer_pool_size = ${MYSQL_BUFFER_POOL:-256M}
+      max_connections = ${MYSQL_MAX_CONNECTIONS:-100}
+      slow_query_log = 1
+      long_query_time = 2
+
+volumes:
+  mysql_data:
+    labels:
+      - pro.asemo.description=MySQL data directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=mysql

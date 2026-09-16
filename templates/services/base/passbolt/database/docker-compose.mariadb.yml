@@ -1,0 +1,17 @@
+# Auto-generated from templates/specs/services/passbolt.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  passbolt:
+    environment:
+      DATASOURCES_DEFAULT_HOST: ${MARIADB_HOST:-mariadb:3306}
+      DATASOURCES_DEFAULT_DATABASE: ${MARIADB_NAME:?MARIADB_NAME is required}
+      DATASOURCES_DEFAULT_USERNAME: ${MARIADB_USER:?MARIADB_USER is required}
+      DATASOURCES_DEFAULT_PASSWORD_FILE: /run/secrets/mariadb_password
+
+    secrets:
+      - mariadb_password
+
+secrets:
+  mariadb_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/mariadb_password

@@ -1,0 +1,31 @@
+# Auto-generated from templates/specs/stacks/nginx-proxy-manager-mariadb.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+# Composed template: Nginx Proxy Manager + MariaDB.
+# Wires base/nginx-proxy-manager and base/mariadb together on shared
+# networks with a health-gated startup order. Include this single file
+# from a stack's docker-compose.yml; it needs no other includes alongside
+# it.
+
+include:
+  - path:
+      - ../services/base/nginx-proxy-manager/docker-compose.yml
+      - ../services/base/nginx-proxy-manager/database/docker-compose.mariadb.yml
+  - ../services/base/mariadb/docker-compose.yml
+
+services:
+  npm:
+    networks:
+      - backend
+    depends_on:
+      mariadb:
+        condition: service_healthy
+        restart: true
+
+  mariadb:
+    networks:
+      - backend
+
+networks:
+  backend:
+    internal: true

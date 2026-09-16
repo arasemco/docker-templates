@@ -1,0 +1,65 @@
+# Auto-generated from templates/specs/services/wordpress.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  wordpress:
+    image: wordpress:${WORDPRESS_TAG:?WORDPRESS_TAG is required}
+    hostname: wordpress.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: ${RESTART:-unless-stopped}
+    pull_policy: ${PULL_POLICY:-missing}
+
+    environment:
+      WORDPRESS_TABLE_PREFIX: ${WORDPRESS_TABLE_PREFIX:-wp_}
+      WORDPRESS_DEBUG: ${WORDPRESS_DEBUG:-0}
+
+    configs:
+      - source: wordpress_php_uploads
+        target: /usr/local/etc/php/conf.d/uploads.ini
+
+    volumes:
+      - type: volume
+        source: wordpress_data
+        target: /var/www/html
+        read_only: false
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail -s -o /dev/null http://localhost/wp-login.php || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${WORDPRESS_CPU_LIMIT:-1.0}"
+          memory: ${WORDPRESS_MEM_LIMIT:-512M}
+
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=WordPress
+      - homepage.icon=wordpress.png
+      - homepage.description=Self-hosted WordPress site
+      - homepage.ping=https://${STACK_DOMAIN}
+      - homepage.href=https://${STACK_DOMAIN}
+      - homepage.widget.type=customapi
+      - homepage.widget.url=https://${STACK_DOMAIN}/wp-json
+      - homepage.widget.refreshInterval=60000
+      - homepage.widget.mappings.[0].label=Site
+      - homepage.widget.mappings.[0].field=name
+      - homepage.widget.mappings.[1].label=Tagline
+      - homepage.widget.mappings.[1].field=description
+
+configs:
+  wordpress_php_uploads:
+    content: |
+      upload_max_filesize = ${WORDPRESS_UPLOAD_MAX:-64M}
+      post_max_size = ${WORDPRESS_UPLOAD_MAX:-64M}
+      memory_limit = ${WORDPRESS_PHP_MEMORY:-256M}
+      max_execution_time = 300
+
+volumes:
+  wordpress_data:
+    labels:
+      - pro.asemo.description=WordPress data directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=wordpress

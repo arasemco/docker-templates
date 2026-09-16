@@ -1,4 +1,0 @@
-include:
-  - docker-compose.backup.yml
-  - docker-compose.base.yml
-  - docker-compose.homepage.yml

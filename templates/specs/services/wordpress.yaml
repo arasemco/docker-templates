@@ -1,0 +1,70 @@
+image: wordpress
+tag_required: true
+
+display:
+  name: WordPress
+
+environment:
+  WORDPRESS_TABLE_PREFIX: "-table_prefix:wp_"
+  WORDPRESS_DEBUG: "-debug:0"
+
+configs:
+  - name: php_uploads
+    target: /usr/local/etc/php/conf.d/uploads.ini
+    content: |
+      upload_max_filesize = ${WORDPRESS_UPLOAD_MAX:-64M}
+      post_max_size = ${WORDPRESS_UPLOAD_MAX:-64M}
+      memory_limit = ${WORDPRESS_PHP_MEMORY:-256M}
+      max_execution_time = 300
+
+volumes:
+  data:
+    path: /var/www/html
+    backup_target: /mnt/var/www/wordpress  # override; default would be /mnt/wordpress
+    backup: true
+    owner:
+      uid: 33
+      gid: 33
+    mod:
+      dirs: 755
+      files: 644
+
+healthcheck:
+  test: ["CMD-SHELL", "curl --fail -s -o /dev/null http://localhost/wp-login.php || exit 1"]
+
+cpu_default: "1.0"
+mem_default: "512M"
+
+labels:
+  homepage.:
+    description: "Self-hosted WordPress site"
+    ping: "https://${STACK_DOMAIN}"
+    href: "https://${STACK_DOMAIN}"
+    widget.:
+      type: customapi
+      url: "https://${STACK_DOMAIN}/wp-json"
+      refreshInterval: "60000"
+      "mappings.[0].":
+        label: Site
+        field: name
+      "mappings.[1].":
+        label: Tagline
+        field: description
+
+extensions:
+  database:
+    variants:
+      mariadb:
+        environment:
+          WORDPRESS_DB_HOST: "-host:mariadb"
+          WORDPRESS_DB_USER: "?user"
+          WORDPRESS_DB_NAME: "?name"
+        secrets:
+          - name: password
+            env_var: WORDPRESS_DB_PASSWORD_FILE
+
+header_comment: |
+  WordPress — self-hosted CMS.
+  Needs the mariadb database extension picked by the consuming stack;
+  redis object-cache wiring (if any) is stack-specific and lives in the
+  stack spec's app_extra, not here.

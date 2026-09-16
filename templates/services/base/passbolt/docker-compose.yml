@@ -1,0 +1,14 @@
+# Auto-generated from templates/specs/services/passbolt.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+# Passbolt — self-hosted password manager.
+# Needs its GPG server key pair placed under the shared secrets dir before
+# first boot (see PASSBOLT_GPG_SERVER_KEY_FINGERPRINT); the database and
+# outbound-mail extensions are optional add-ons, picked by the consuming
+# stack.
+
+include:
+  - docker-compose.backup.yml
+  - docker-compose.base.yml
+  - docker-compose.smtp.yml
+

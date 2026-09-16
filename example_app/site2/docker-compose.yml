@@ -1,0 +1,52 @@
+include:
+  - ../../templates/stacks/docker-compose.wordpress-mariadb-redis.yml
+  - ../../templates/services/base/tor/docker-compose.yml
+
+
+services:
+  wordpress:
+    environment:
+      ONION_URL: https://${ONION:?ONION is required}/
+    configs:
+      - source: apache2_vhost
+        target: /etc/apache2/sites-available/000-default.conf
+    depends_on:
+      - backup
+      - tor
+    networks:
+      - frontend
+
+  tor:
+    environment:
+      TORRC_ENABLE_HS: "true"
+      TORRC_HS_PORTS: "80:10.2.0.2:80,443:10.2.0.2:443"
+      #TORRC_ENTRY_NODES: "{fr}"
+    secrets:
+      - tor_hs_ed25519_secret_key
+    networks:
+      - frontend
+
+
+secrets:
+  tor_hs_ed25519_secret_key:
+    file: ${SECRETS_DIR}/keys/${COMPOSE_PROJECT_NAME}/onion/${ONION}/hs_ed25519_secret_key
+
+configs:
+  apache2_vhost:
+    content: |
+      LoadModule headers_module /usr/lib/apache2/modules/mod_headers.so
+      PassEnv ONION_URL
+
+      <VirtualHost *:80>
+          ServerName ${STACK_DOMAIN:?STACK_DOMAIN is required}
+          Header always set Onion-Location "%{ONION_URL}e"
+          ServerAdmin webmaster@localhost
+          DocumentRoot /var/www/html
+          ErrorLog $${APACHE_LOG_DIR}/error.log
+          CustomLog $${APACHE_LOG_DIR}/access.log combined
+      </VirtualHost>
+
+networks:
+  frontend:
+    name: domain_reverse-proxy
+    external: true

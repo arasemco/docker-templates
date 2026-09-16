@@ -1,0 +1,25 @@
+# Auto-generated from templates/specs/services/syslog.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+include:
+  - ../backup/docker-compose.yml
+
+x-volumes: &syslog-volumes
+  volumes:
+    - syslog_data:/mnt/var/log
+
+services:
+  backup: *syslog-volumes
+  restore:
+    <<: *syslog-volumes
+    configs:
+      - source: syslog_restore_00_owner
+        target: /srv/configs/restore.d/00-syslog-owner.sh
+
+configs:
+  syslog_restore_00_owner:
+    content: |
+      set -e
+      chown -R root:root /mnt/var/log
+      find /mnt/var/log -type d -exec chmod 755 {} +
+      find /mnt/var/log -type f -exec chmod 644 {} +

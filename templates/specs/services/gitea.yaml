@@ -1,0 +1,244 @@
+image: gitea/gitea
+tag_required: true
+
+environment:
+  USER_:
+    UID: "1000"
+    GID: "1000"
+
+  GITEA__:
+    __:
+      APP_NAME: "Gitea: Git with a cup of tea from ${STACK_DOMAIN}"
+      WORK_PATH: /data/gitea
+      RUN_:
+        USER: git
+        MODE: prod
+
+    admin__DEFAULT_EMAIL_NOTIFICATIONS: enabled
+    picture__GRAVATAR_SOURCE: gravatar
+
+    repository:
+      __:
+        ROOT: /data/git/repositories
+        SCRIPT_TYPE: bash
+        DISABLE_HTTP_GIT: ${GITEA_DISABLE_HTTP_GIT:-false}
+        PREFERRED_LICENSES: ${GITEA_PREFERRED_LICENSES:-Apache License 2.0,MIT License}
+        DEFAULT_:
+          BRANCH: ${GITEA_DEFAULT_BRANCH:-main}
+          PUSH_CREATE_PRIVATE: ${GITEA_DEFAULT_PUSH_CREATE_PRIVATE:-true}
+        ENABLE_PUSH_CREATE_:
+          ORG: ${GITEA_ENABLE_PUSH_CREATE_ORG:-true}
+          USER: ${GITEA_ENABLE_PUSH_CREATE_USER:-true}
+
+      .signing__:
+        INITIAL_COMMIT: ${GITEA_SIGNING_INITIAL_COMMIT:-always}
+        CRUD_ACTIONS: ${GITEA_SIGNING_CRUD_ACTIONS:-pubkey,twofa,parentsigned}
+        WIKI: ${GITEA_SIGNING_WIKI:-never}
+        MERGES: ${GITEA_SIGNING_MERGES:-pubkey,twofa,basesigned,commitssigned}
+        SIGNING_:
+          KEY: ${GITEA_SIGNING_KEY:-default}
+          NAME: ${GITEA_SIGNING_NAME:-}
+          EMAIL: ${GITEA_SIGNING_EMAIL:-}
+
+    server__:
+      APP_DATA_PATH: /data/gitea
+      DOMAIN: ${STACK_DOMAIN}
+      ROOT_URL: https://${STACK_DOMAIN}
+      LOCAL_ROOT_URL: http://gitea:3000
+      DISABLE_SSH: false
+      LANDING_PAGE: explore
+      LFS_:
+        START_SERVER: false
+        JWT_SECRET_URI: "file:/run/secrets/server_lfs_jwt_secret"
+      HTTP_:
+        ADDR: 0.0.0.0
+        PORT: 3000
+      SSH_:
+        DOMAIN: ${STACK_DOMAIN}
+        PORT: 22
+        LISTEN_:
+          HOST: 0.0.0.0
+          PORT: 22
+
+    security__:
+      INSTALL_LOCK: true
+      SECRET_KEY_URI: "file:/run/secrets/security_secret_key"
+      INTERNAL_TOKEN_URI: "file:/run/secrets/security_internal_token"
+      MIN_PASSWORD_LENGTH: 32
+      PASSWORD_:
+        CHECK_PWN: false
+        HASH_ALGO: pbkdf2
+        COMPLEXITY: lower,upper,digit,spec
+      REVERSE_PROXY_:
+        LIMIT: 1
+        TRUSTED_PROXIES: 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+
+    service__:
+      DISABLE_REGISTRATION: false
+      REQUIRE_SIGNIN_VIEW: false
+      ENABLE_:
+        NOTIFY_MAIL: true
+        PASSKEY_AUTHENTICATION: true
+      REGISTER_:
+        EMAIL_CONFIRM: true
+        MANUAL_CONFIRM: true
+      DEFAULT_:
+        KEEP_EMAIL_PRIVATE: false
+        ALLOW_CREATE_ORGANIZATION: true
+        USER_IS_RESTRICTED: true
+        ENABLE_TIMETRACKING: true
+      ALLOW_ONLY_:
+        INTERNAL_REGISTRATION: true
+        EXTERNAL_REGISTRATION: false
+      NO_REPLY_ADDRESS: ""
+
+    log__:
+      ROOT_PATH: /data/gitea/log
+      MODE: console
+      LEVEL: info
+
+    cron__:
+      ENABLED: true
+      RUN_AT_START: true
+    cron.update_checker__ENABLED: true
+    oauth2__JWT_SECRET_URI: file:/run/secrets/oauth2_jwt_secret
+    packages__ENABLED: "true"
+    actions__ENABLED: "true"
+
+secrets:
+  - name: security_secret_key
+    bare: true
+  - name: security_internal_token
+    bare: true
+  - name: server_lfs_jwt_secret
+    bare: true
+  - name: oauth2_jwt_secret
+    bare: true
+
+volumes:
+  data:
+    path: /data
+    backup_target: /mnt/data  # override; default would be /mnt/gitea
+    backup: true
+    owner:
+      uid: 1000
+      gid: 1000
+    mod:
+      dirs: 755
+      files: 644
+
+bind_mounts:
+  - source: "${SECRETS_DIR:?SECRETS_DIR is required}/keys/${COMPOSE_PROJECT_NAME}/gpg"
+    target: /data/gitea/home/.gnupg
+
+healthcheck:
+  test: ["CMD-SHELL", "curl --fail -s -o /dev/null http://localhost:3000/api/healthz || exit 1"]
+
+cpu_default: "1.0"
+mem_default: "512M"
+
+extra:
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+labels:
+  npm.:
+    proxy.:
+      host.:
+        details.:
+          domain_names:
+            - ${STACK_DOMAIN}
+          scheme: http
+          forward.:
+            host: gitea
+            port: 3000
+          access_list: HomeIP
+          options.:
+            cache_assets: false
+            block_common_exploits: true
+            websockets_support: true
+        advanced: real_ip_header CF-Connecting-IP;
+        custom_locations.:
+          location: /test
+          scheme: http
+          forward:
+            host: tset
+            port: 3001
+          advanced: some custom nginx conf
+        ssl.:
+          certificate: "*.asemo.pro, asemo.pro"
+          force: true
+          http2_support: true
+          hsts_:
+            enabled: true
+            sub-domains: false
+          advanced.:
+            trust_upstream_forwarded_proto_headers: false
+  homepage.:
+    description: "Self-hosted Git service"
+    ping: "https://${STACK_DOMAIN}"
+    href: "https://${STACK_DOMAIN}"
+    widget.:
+      type: gitea
+      url: "http://gitea:3000"
+      key: "${GITEA_HOMEPAGE_API_KEY}"
+      fields: '["repositories", "notifications", "issues", "pulls"]'
+
+extensions:
+  database:
+    variants:
+      mariadb:
+        environment:
+          GITEA__database__:
+            DB_TYPE: mariadb
+            HOST: "-host:mariadb:3306"
+            NAME: "?name"
+            USER: "?user"
+            SSL_MODE: "-ssl_mode:disable"
+            LOG_SQL: "-log_sql:false"
+        secrets:
+          - name: password
+            env_var: GITEA__database__PASSWD__FILE
+      mysql:
+        environment:
+          GITEA__database__:
+            DB_TYPE: mysql
+            HOST: "-host:mysql:3306"
+            NAME: "?name"
+            USER: "?user"
+            SSL_MODE: "-ssl_mode:disable"
+            LOG_SQL: "-log_sql:false"
+        secrets:
+          - name: password
+            env_var: GITEA__database__PASSWD__FILE
+      sqlite3:
+        environment:
+          GITEA__database__:
+            DB_TYPE: sqlite3
+            PATH: "-path:/data/gitea/gitea.db"
+            LOG_SQL: "-log_sql:false"
+
+  smtp:
+    environment:
+      GITEA__mailer__:
+        ENABLED: "-enabled:true"
+        PROTOCOL: smtp
+        SMTP_ADDR: "?host"
+        SMTP_PORT: "?port"
+        FORCE_TRUST_SERVER_CERT: "-force_trust_server_cert:false"
+        USER: "${SMTP_USERNAME}"
+        FROM: "GITEA <${SMTP_FROM}>"
+    secrets:
+      - name: password
+        env_var: GITEA__mailer__PASSWD__FILE
+        shared: true
+
+header_comment: |
+  Gitea — self-hosted Git service with Actions CI support.
+  Needs a database extension (mariadb/mysql/sqlite3) picked by the
+  consuming stack; smtp is an optional add-on for outbound mail. GPG
+  signing keys are bind-mounted from the shared secrets dir, not generated
+  here.

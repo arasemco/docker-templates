@@ -1,0 +1,64 @@
+services:
+  wordpress-cli:
+    extends:
+      service: wordpress
+    profiles:
+      - wordpress-cli
+    image: wordpress:cli
+    hostname: wordpress-cli.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    user: "33:33"
+    entrypoint: ["/bin/bash"]
+    restart: "no"
+    healthcheck:
+      test: []
+    deploy:
+      resources: {}
+    networks:
+      - egress
+
+  wordpress-init:
+    extends:
+      service: wordpress-cli
+    depends_on:
+      wordpress:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        for f in /srv/configs/init.d/*.sh; do
+          [ -e "$$f" ] || continue
+          echo "running $$f"
+          bash "$$f"
+        done
+    secrets:
+      - wordpress_admin_password
+    configs:
+      - source: wordpress_init_00_core
+        target: /srv/configs/init.d/00-core-install.sh
+
+secrets:
+  wordpress_admin_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/wordpress_admin_password
+
+configs:
+  wordpress_init_00_core:
+    content: |
+      set -e
+      wp core is-installed || wp core install \
+        --url="${STACK_DOMAIN}" \
+        --title="${STACK_DOMAIN}" \
+        --admin_user="${WORDPRESS_ADMIN_USER:?WORDPRESS_ADMIN_USER is required}" \
+        --admin_password="$$(cat /run/secrets/wordpress_admin_password)" \
+        --admin_email="${WORDPRESS_ADMIN_EMAIL:?WORDPRESS_ADMIN_EMAIL is required}" \
+        --locale="${WORDPRESS_LOCALE:-en_US}" \
+        --skip-email
+
+      CURRENT="$$(wp option get permalink_structure)"
+      if [ -z "$$CURRENT" ]; then
+        wp rewrite structure '/%year%/%monthnum%/%day%/%postname%/'
+        wp rewrite flush --hard
+      fi
+
+networks:
+  egress:

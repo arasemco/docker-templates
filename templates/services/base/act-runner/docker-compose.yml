@@ -1,0 +1,13 @@
+# Auto-generated from templates/specs/services/act-runner.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+# Gitea Act Runner — self-hosted CI runner for Gitea Actions.
+# Registers against gitea using a registration_token secret, and runs jobs
+# by talking to the host's docker socket (bind-mounted, not DinD). Only
+# ever wired in alongside gitea, via tools/specs/stacks/gitea-mariadb.yaml —
+# never included as a standalone service.
+
+include:
+  - docker-compose.backup.yml
+  - docker-compose.base.yml
+

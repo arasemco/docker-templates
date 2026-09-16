@@ -1,0 +1,55 @@
+image: mariadb
+description: database
+tag_required: true
+
+display:
+  name: MariaDB
+
+environment:
+  MARIADB_DATABASE: "?name"
+  MARIADB_USER: "?user"
+  MARIADB_AUTO_UPGRADE: "1"
+
+secrets:
+  - name: password
+    env_var: MARIADB_PASSWORD_FILE
+  - name: root_password
+    env_var: MARIADB_ROOT_PASSWORD_FILE
+
+configs:
+  - name: tuning
+    target: /etc/mysql/conf.d/tuning.cnf
+    content: |
+      [mysqld]
+      innodb_buffer_pool_size = ${MARIADB_BUFFER_POOL:-256M}
+      max_connections = ${MARIADB_MAX_CONNECTIONS:-100}
+      slow_query_log = 1
+      long_query_time = 2
+
+volumes:
+  data:
+    path: /var/lib/mysql
+    backup_target: /mnt/var/lib/mariadb  # override; default would be /mnt/mariadb
+    backup: true
+    owner:
+      uid: 999
+      gid: 999
+    mod:
+      dirs: 700
+      files: 600
+
+healthcheck:
+  test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+
+cpu_default: "1.0"
+mem_default: "1G"
+
+labels:
+  homepage.:
+    description: "Relational database for ${COMPOSE_PROJECT_NAME}"
+
+header_comment: |
+  MariaDB — relational database server.
+  Each consuming service gets its own database/user (MARIADB_DATABASE/
+  MARIADB_USER) and its own `password`/`root_password` secrets — there's no
+  shared root account across stacks.
