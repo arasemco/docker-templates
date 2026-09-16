@@ -17,7 +17,15 @@ jobs:
             | sort -u > /tmp/required-vars.txt
           : > ci.env
           while read -r var; do
-            echo "${var}=ci-dummy-value" >> ci.env
+            # SECRETS_DIR is concatenated into bind-mount source paths
+            # (${SECRETS_DIR}/keys/...) - it must look like an absolute
+            # path, or compose's short volume syntax mistakes the result
+            # for a *named* volume reference instead of a bind mount.
+            if [ "$var" = "SECRETS_DIR" ]; then
+              echo "SECRETS_DIR=/ci-dummy/secrets" >> ci.env
+            else
+              echo "${var}=ci-dummy-value" >> ci.env
+            fi
           done < /tmp/required-vars.txt
           cat ci.env
 

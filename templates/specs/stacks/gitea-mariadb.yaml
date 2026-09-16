@@ -4,7 +4,7 @@ dep: mariadb
 extensions:
   database: mariadb
 
-custom: false
+custom: true
 
 app_networks:
   - runner

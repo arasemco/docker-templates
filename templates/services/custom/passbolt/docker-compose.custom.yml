@@ -1,6 +1,7 @@
 services:
   passbolt-cli:
     extends:
+      file: ../../base/passbolt/docker-compose.base.yml
       service: passbolt
     profiles:
       - passbolt-cli

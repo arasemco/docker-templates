@@ -1,6 +1,7 @@
 services:
   gitea-cli:
     extends:
+      file: ../../base/gitea/docker-compose.base.yml
       service: gitea
     profiles:
       - gitea-cli

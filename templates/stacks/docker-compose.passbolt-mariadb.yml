@@ -10,6 +10,7 @@ include:
   - path:
       - ../services/base/passbolt/docker-compose.yml
       - ../services/base/passbolt/database/docker-compose.mariadb.yml
+      - ../services/custom/passbolt/docker-compose.custom.yml
   - ../services/base/mariadb/docker-compose.yml
 
 services:

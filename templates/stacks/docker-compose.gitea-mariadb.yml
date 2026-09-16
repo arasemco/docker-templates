@@ -11,6 +11,7 @@ include:
   - path:
       - ../services/base/gitea/docker-compose.yml
       - ../services/base/gitea/database/docker-compose.mariadb.yml
+      - ../services/custom/gitea/docker-compose.custom.yml
   - ../services/base/mariadb/docker-compose.yml
   - ../services/base/act-runner/docker-compose.yml
 

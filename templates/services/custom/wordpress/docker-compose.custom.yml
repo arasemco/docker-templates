@@ -1,6 +1,7 @@
 services:
   wordpress-cli:
     extends:
+      file: ../../base/wordpress/docker-compose.base.yml
       service: wordpress
     profiles:
       - wordpress-cli
