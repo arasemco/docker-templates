@@ -32,6 +32,16 @@ If `uv` (or Python) isn't installed and you can't install it yourself in
 this environment, say so and ask the person running this to install it —
 don't try to work around a missing interpreter.
 
+**`service` and `stack` are different schemas — match the subcommand to
+the spec.** Running `service` against a file under `templates/specs/stacks/`
+(or vice versa) isn't a graceful error, it's a raw Python traceback (a
+stack spec's `extensions: {database: mariadb}` is a group→variant string;
+a service spec's `extensions:` is a group→`{variants: {...}}` mapping, and
+`load_service_spec` crashes trying to treat one as the other). If you see
+an `AttributeError`/`KeyError` traceback instead of a clean `error: ...`
+line, check you used the right subcommand before assuming the spec itself
+is broken.
+
 ## Workflow: adding a new base service
 
 1. **Gather the real facts about the image first.** Don't guess: check the
@@ -188,6 +198,10 @@ cd tools
 uv run python -m docker_templates_tools stack ../templates/specs/stacks/<app>-<dep>.yaml --dry-run
 uv run python -m docker_templates_tools stack ../templates/specs/stacks/<app>-<dep>.yaml
 ```
+
+This also (re)writes `templates/stacks/README.md` — a directory-level
+notice shared by every stack, not per-stack content, so it's refreshed
+every time regardless of `--force`.
 
 `dep` can be a single name or a list (wordpress depends on both `mariadb`
 and `redis` — `app` health-gate-depends_on's every one of them). Nothing
