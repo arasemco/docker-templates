@@ -3,13 +3,19 @@
 
 # Composed template: Passbolt + MariaDB.
 # Wires base/passbolt and base/mariadb together on shared networks with a
-# health-gated startup order. Include this single file from a stack's
-# docker-compose.yml; it needs no other includes alongside it.
+# health-gated startup order, and selects passbolt's smtp mailer variant —
+# registration/invite emails are core to passbolt, so this stack always
+# wires mail rather than leaving it as a manual add-on; requires
+# SMTP_HOST/SMTP_FROM and a shared smtp_password secret (see
+# passbolt.yaml's mailer extension) to actually be set. Include this
+# single file from a stack's docker-compose.yml; it needs no other
+# includes alongside it.
 
 include:
   - path:
       - ../services/base/passbolt/docker-compose.yml
       - ../services/base/passbolt/database/docker-compose.mariadb.yml
+      - ../services/base/passbolt/mailer/docker-compose.smtp.yml
       - ../services/custom/passbolt/docker-compose.custom.yml
   - ../services/base/mariadb/docker-compose.yml
 

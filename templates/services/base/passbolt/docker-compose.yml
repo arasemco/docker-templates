@@ -4,11 +4,13 @@
 # Passbolt — self-hosted password manager.
 # Needs its GPG server key pair placed under the shared secrets dir before
 # first boot (see PASSBOLT_GPG_SERVER_KEY_FINGERPRINT); the database and
-# outbound-mail extensions are optional add-ons, picked by the consuming
-# stack.
+# mailer extensions are optional add-ons, picked by the consuming stack —
+# mailer is grouped/variant-shaped like database (currently one variant,
+# smtp) so a non-SMTP transport can be added later without reshaping this.
+# In practice passbolt is not very usable without mail (registration/
+# invite flows depend on it), so most real stacks will want it wired in.
 
 include:
   - docker-compose.backup.yml
   - docker-compose.base.yml
-  - docker-compose.smtp.yml
 

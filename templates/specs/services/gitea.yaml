@@ -97,10 +97,11 @@ environment:
       MODE: console
       LEVEL: info
 
-    cron__:
-      ENABLED: true
-      RUN_AT_START: true
-    cron.update_checker__ENABLED: true
+    cron:
+      __:
+        ENABLED: true
+        RUN_AT_START: true
+      .update_checker__ENABLED: true
     oauth2__JWT_SECRET_URI: file:/run/secrets/oauth2_jwt_secret
     packages__ENABLED: "true"
     actions__ENABLED: "true"
@@ -149,38 +150,6 @@ extra:
     - git
 
 labels:
-  npm.:
-    proxy.:
-      host.:
-        details.:
-          domain_names:
-            - ${STACK_DOMAIN}
-          scheme: http
-          forward.:
-            host: gitea
-            port: 3000
-          access_list: HomeIP
-          options.:
-            cache_assets: false
-            block_common_exploits: true
-            websockets_support: true
-        advanced: real_ip_header CF-Connecting-IP;
-        custom_locations.:
-          location: /test
-          scheme: http
-          forward:
-            host: tset
-            port: 3001
-          advanced: some custom nginx conf
-        ssl.:
-          certificate: "*.asemo.pro, asemo.pro"
-          force: true
-          http2_support: true
-          hsts_:
-            enabled: true
-            sub-domains: false
-          advanced.:
-            trust_upstream_forwarded_proto_headers: false
   homepage.:
     description: "Self-hosted Git service"
     ping: "https://${STACK_DOMAIN}"
@@ -225,24 +194,28 @@ extensions:
             PATH: "-path:/data/gitea/gitea.db"
             LOG_SQL: "-log_sql:false"
 
-  smtp:
-    environment:
-      GITEA__mailer__:
-        ENABLED: "-enabled:true"
-        PROTOCOL: smtp
-        SMTP_ADDR: "?host"
-        SMTP_PORT: "?port"
-        FORCE_TRUST_SERVER_CERT: "-force_trust_server_cert:false"
-        USER: "${SMTP_USERNAME}"
-        FROM: "GITEA <${SMTP_FROM}>"
-    secrets:
-      - name: password
-        env_var: GITEA__mailer__PASSWD__FILE
-        shared: true
+  mailer:
+    variants:
+      smtp:
+        environment:
+          GITEA__mailer__:
+            ENABLED: "-enabled:true"
+            PROTOCOL: smtp
+            SMTP_ADDR: "?host"
+            SMTP_PORT: "?port"
+            FORCE_TRUST_SERVER_CERT: "-force_trust_server_cert:false"
+            USER: "${SMTP_USERNAME}"
+            FROM: "GITEA <${SMTP_FROM}>"
+        secrets:
+          - name: password
+            env_var: GITEA__mailer__PASSWD__FILE
+            shared: true
 
 header_comment: |
   Gitea — self-hosted Git service with Actions CI support.
   Needs a database extension (mariadb/mysql/sqlite3) picked by the
-  consuming stack; smtp is an optional add-on for outbound mail. GPG
+  consuming stack; mailer (currently one variant, smtp) is an optional
+  add-on for outbound mail, same grouped-variant shape as database so a
+  non-SMTP transport can be added later without reshaping this. GPG
   signing keys are bind-mounted from the shared secrets dir, not generated
   here.

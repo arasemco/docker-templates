@@ -3,12 +3,13 @@
 
 # Gitea — self-hosted Git service with Actions CI support.
 # Needs a database extension (mariadb/mysql/sqlite3) picked by the
-# consuming stack; smtp is an optional add-on for outbound mail. GPG
+# consuming stack; mailer (currently one variant, smtp) is an optional
+# add-on for outbound mail, same grouped-variant shape as database so a
+# non-SMTP transport can be added later without reshaping this. GPG
 # signing keys are bind-mounted from the shared secrets dir, not generated
 # here.
 
 include:
   - docker-compose.backup.yml
   - docker-compose.base.yml
-  - docker-compose.smtp.yml
 

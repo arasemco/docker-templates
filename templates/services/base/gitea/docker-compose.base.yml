@@ -128,26 +128,6 @@ services:
       - homepage.widget.url=http://gitea:3000
       - homepage.widget.key=${GITEA_HOMEPAGE_API_KEY}
       - homepage.widget.fields=["repositories", "notifications", "issues", "pulls"]
-      - npm.proxy.host.details.domain_names=["${STACK_DOMAIN}"]
-      - npm.proxy.host.details.scheme=http
-      - npm.proxy.host.details.forward.host=gitea
-      - npm.proxy.host.details.forward.port=3000
-      - npm.proxy.host.details.access_list=HomeIP
-      - npm.proxy.host.details.options.cache_assets=false
-      - npm.proxy.host.details.options.block_common_exploits=true
-      - npm.proxy.host.details.options.websockets_support=true
-      - npm.proxy.host.advanced=real_ip_header CF-Connecting-IP;
-      - npm.proxy.host.custom_locations.location=/test
-      - npm.proxy.host.custom_locations.scheme=http
-      - npm.proxy.host.custom_locations.forwardhost=tset
-      - npm.proxy.host.custom_locations.forwardport=3001
-      - npm.proxy.host.custom_locations.advanced=some custom nginx conf
-      - npm.proxy.host.ssl.certificate=*.asemo.pro, asemo.pro
-      - npm.proxy.host.ssl.force=true
-      - npm.proxy.host.ssl.http2_support=true
-      - npm.proxy.host.ssl.hsts_enabled=true
-      - npm.proxy.host.ssl.hsts_sub-domains=false
-      - npm.proxy.host.ssl.advanced.trust_upstream_forwarded_proto_headers=false
 
 secrets:
   security_secret_key:

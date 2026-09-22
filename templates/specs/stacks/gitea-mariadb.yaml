@@ -3,6 +3,7 @@ dep: mariadb
 
 extensions:
   database: mariadb
+  mailer: smtp
 
 custom: true
 
@@ -34,6 +35,10 @@ extra_services:
 header_comment: |
   Composed template: Gitea + MariaDB + Act Runner.
   Wires base/gitea, base/mariadb, and base/act-runner together on shared
-  networks with a health-gated startup order. Include this single file
-  from a stack's docker-compose.yml; it needs no other includes alongside
-  it.
+  networks with a health-gated startup order, and selects gitea's smtp
+  mailer variant so outbound mail (notifications, password reset) works
+  out of the box — requires SMTP_HOST/SMTP_PORT/SMTP_FROM and a shared
+  smtp_password secret (see gitea.yaml's mailer extension) to actually be
+  set; gitea itself still runs fine without them, mail just won't send.
+  Include this single file from a stack's docker-compose.yml; it needs no
+  other includes alongside it.
