@@ -1,0 +1,37 @@
+# Requires a (meaningless-here) STACK_DOMAIN, e.g. via a `.env` file next
+# to this one:
+#   STACK_DOMAIN=local
+# The included base template hardcodes
+# `hostname: claude-code.${STACK_DOMAIN:?STACK_DOMAIN is required}.local`
+# for every service in this repo, even ones with no reverse proxy — the
+# override below replaces it, but Compose still interpolates the included
+# file's own `${STACK_DOMAIN:?...}` at load time, before any override in
+# this file is applied, so a missing STACK_DOMAIN fails the whole thing
+# regardless of the override. See
+# ../../templates/specs/services/claude-code.yaml's header_comment for why
+# this service doesn't otherwise fit the generator's pulled/reverse-proxied
+# shape (build-only image, no STACK_DOMAIN/proxy of its own).
+#
+# Build before first run (no image to pull):
+#   cd ../../../../Projects/docker/claude-code && docker compose build
+#
+# Then from this directory:
+#   docker compose up
+
+include:
+  - ../../templates/services/base/claude-code/docker-compose.yml
+
+services:
+  claude-code:
+    build:
+      context: ../../../../Projects/docker/claude-code
+      dockerfile: Dockerfile
+      args:
+        CLAUDE_UID: ${CLAUDE_UID:-1000}
+        CLAUDE_GID: ${CLAUDE_GID:-1000}
+        DOCKER_VERSION: ${DOCKER_VERSION:-29.8.1}
+    hostname: claude-code
+    restart: "no"
+
+    volumes:
+      - path/to/some/projects/:path/to/some/projects/

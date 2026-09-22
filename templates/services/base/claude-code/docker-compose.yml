@@ -1,0 +1,34 @@
+# Auto-generated from templates/specs/services/claude-code.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+# Claude Code — persistent, self-hosted Claude Code CLI sandbox (rootless
+# Docker-in-Docker) that aram.semo drives from another device via Remote
+# Control. Unlike every other spec in this repo, this is NOT a pulled,
+# reverse-proxied homelab service: it's a locally BUILT, interactive
+# personal dev container with no STACK_DOMAIN and nothing behind a proxy.
+#
+# BUILD, DON'T PULL: this image has no upstream to pull from. Before
+# `docker compose up`, build it from the source repo:
+#   cd ~/Projects/docker/claude-code && docker compose build
+# or, using its own bake file (also lets you push to REGISTRY, currently
+# git.omesa.net/asemo, if ever published):
+#   cd ~/Projects/docker/claude-code && bash bake.sh [--push]
+#
+# This spec exists for documentation/consistency with the rest of the spec
+# catalog, not to be regenerated: this generator has no `build:` concept
+# and always emits a pulled `image:` line plus a
+# `hostname: <name>.${STACK_DOMAIN:?...}.local` line and
+# `restart: ${RESTART:-unless-stopped}` — none of which apply here. If this
+# spec is ever run through the generator anyway, hand-correct or drop those
+# lines afterward; the real source of truth is
+# ~/Projects/docker/claude-code/docker-compose.yml. The fields under
+# `extra:` (stdin_open/tty/init/restart/runtime/security_opt/devices/
+# command) have no first-class schema field to live in otherwise.
+#
+# Bind mounts are host paths specific to aram.semo's as01 machine, not
+# portable across hosts. No `secrets:`/`volumes:`/backup story: nothing
+# here is meant to be backed up by this repo's backup/restore convention.
+
+include:
+  - docker-compose.base.yml
+

@@ -1,0 +1,50 @@
+# Auto-generated from templates/specs/services/claude-code.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  claude-code:
+    image: claude-code:${CLAUDE_CODE_TAG:-local}
+    hostname: claude-code.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: ${RESTART:-unless-stopped}
+    pull_policy: ${PULL_POLICY:-missing}
+
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+
+    volumes:
+      - type: bind
+        source: ${HOME}/.claude
+        target: /home/claude/.claude
+        read_only: false
+      - type: bind
+        source: ${HOME}/.claude.json
+        target: /home/claude/.claude.json
+        read_only: false
+
+    healthcheck:
+      test: ["CMD", "claude", "--version"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${CLAUDE_CODE_CPU_LIMIT:-8}"
+          memory: ${CLAUDE_CODE_MEM_LIMIT:-32G}
+
+    init: true
+    stdin_open: true
+    tty: true
+    runtime: runc
+    security_opt:
+      - seccomp:unconfined
+      - systempaths=unconfined
+    devices:
+      - /dev/fuse
+      - /dev/net/tun
+    command:
+      - This is your persistent Claude Code container. Remote Control is enabled, so stand by for a connection.
+      - --remote-control
+
