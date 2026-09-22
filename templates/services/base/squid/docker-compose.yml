@@ -1,0 +1,10 @@
+# Auto-generated from templates/specs/services/squid.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+# Squid — forward/caching HTTP proxy.
+# Config (squid.conf/conf.d/lists) and ports are deployment-specific —
+# bind-mount and publish them in the consuming docker-compose.yml.
+
+include:
+  - docker-compose.base.yml
+

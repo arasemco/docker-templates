@@ -1,0 +1,10 @@
+# Auto-generated from templates/specs/services/haproxy.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+# HAProxy — TCP passthrough load balancer.
+# haproxy.cfg and the reverse-proxy network (needs real IPAM/static IP)
+# are deployment-specific — set both in the consuming docker-compose.yml.
+
+include:
+  - docker-compose.base.yml
+

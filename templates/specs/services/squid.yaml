@@ -1,0 +1,20 @@
+image: ubuntu/squid
+tag_default: "latest"
+
+cpu_default: "0.5"
+mem_default: "256M"
+
+extra:
+  profiles:
+    - ""
+    - squid
+    - forward-proxy
+    - fwd-proxy
+
+labels:
+  homepage.: {}
+
+header_comment: |
+  Squid — forward/caching HTTP proxy.
+  Config (squid.conf/conf.d/lists) and ports are deployment-specific —
+  bind-mount and publish them in the consuming docker-compose.yml.

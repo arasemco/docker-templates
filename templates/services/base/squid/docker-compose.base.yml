@@ -1,0 +1,22 @@
+# Auto-generated from templates/specs/services/squid.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  squid:
+    image: ubuntu/squid:${SQUID_TAG:-latest}
+    hostname: squid.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: ${RESTART:-unless-stopped}
+    pull_policy: ${PULL_POLICY:-missing}
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${SQUID_CPU_LIMIT:-0.5}"
+          memory: ${SQUID_MEM_LIMIT:-256M}
+
+    profiles:
+      - ''
+      - squid
+      - forward-proxy
+      - fwd-proxy
+

@@ -1,0 +1,22 @@
+# Auto-generated from templates/specs/services/haproxy.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  haproxy:
+    image: haproxy:${HAPROXY_TAG:-3.2}
+    hostname: haproxy.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: ${RESTART:-unless-stopped}
+    pull_policy: ${PULL_POLICY:-missing}
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${HAPROXY_CPU_LIMIT:-0.5}"
+          memory: ${HAPROXY_MEM_LIMIT:-256M}
+
+    profiles:
+      - ''
+      - haproxy
+      - reverse-proxy
+      - rev-proxy
+
