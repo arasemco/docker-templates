@@ -120,11 +120,18 @@ class Healthcheck:
 @define
 class Extension:
     """One optional add-on layer for the main service: its own environment
-    entries and secrets, merged into `services.<service_name>` when included."""
+    entries, secrets, configs, and bind mounts, merged into
+    `services.<service_name>` when included. configs/bind_mounts exist for
+    variants that differ by more than environment — e.g. homepage's
+    docker-access extension, where the socket and proxy variants each need
+    their own docker.yaml content, and only the socket variant needs a
+    bind mount at all."""
 
     key: str  # variant key, e.g. "mariadb"; for a flat (ungrouped) extension this equals the group key
     environment: dict = Factory(dict)
     secrets: list = Factory(list)  # list[Secret]
+    configs: list = Factory(list)  # list[Config], named "<variant.key>_<suffix>"
+    bind_mounts: list = Factory(list)  # list[BindMount]
 
 
 @define
@@ -196,6 +203,11 @@ class ServiceSpec:
             for variant in group.variants:
                 for s in variant.secrets:
                     s.name = secret_full_name(s, variant.key)
+                for c in variant.configs:
+                    c.name = f"{variant.key}_{c.suffix}"
+                for bm in variant.bind_mounts:
+                    if bm.backup_target is None:
+                        bm.backup_target = f"/mnt{bm.target}"
 
     @property
     def upper(self) -> str:
@@ -248,6 +260,36 @@ def _load_owner_mod(d: dict) -> tuple:
     )
 
 
+def _load_bind_mounts(defs: list) -> list:
+    bind_mounts = []
+    for bmdef in defs or []:
+        owner, mod = _load_owner_mod(bmdef)
+        bind_mounts.append(
+            BindMount(
+                source=bmdef["source"],
+                target=bmdef["target"],
+                read_only=bmdef.get("read_only", False),
+                backup=bool(bmdef.get("backup", False)),
+                owner=owner,
+                mod=mod,
+                backup_target=bmdef.get("backup_target"),
+            )
+        )
+    return bind_mounts
+
+
+def _load_configs(defs: list) -> list:
+    return [
+        Config(
+            suffix=c["suffix"] if "suffix" in c else c["name"],
+            target=c["target"],
+            content=c["content"],
+            mode=c.get("mode"),
+        )
+        for c in defs or []
+    ]
+
+
 def load_service_spec(d: dict) -> ServiceSpec:
     volumes = []
     for suffix, vdef in (d.get("volumes") or {}).items():
@@ -265,31 +307,9 @@ def load_service_spec(d: dict) -> ServiceSpec:
             )
         )
 
-    bind_mounts = []
-    for bmdef in d.get("bind_mounts", []):
-        owner, mod = _load_owner_mod(bmdef)
-        bind_mounts.append(
-            BindMount(
-                source=bmdef["source"],
-                target=bmdef["target"],
-                read_only=bmdef.get("read_only", False),
-                backup=bool(bmdef.get("backup", False)),
-                owner=owner,
-                mod=mod,
-                backup_target=bmdef.get("backup_target"),
-            )
-        )
-
+    bind_mounts = _load_bind_mounts(d.get("bind_mounts"))
     secrets = [_load_secret(s) for s in d.get("secrets", [])]
-    configs = [
-        Config(
-            suffix=c["suffix"] if "suffix" in c else c["name"],
-            target=c["target"],
-            content=c["content"],
-            mode=c.get("mode"),
-        )
-        for c in d.get("configs", [])
-    ]
+    configs = _load_configs(d.get("configs"))
 
     hc = d.get("healthcheck")
     healthcheck = Healthcheck(**hc) if hc and hc.get("test") else None
@@ -308,6 +328,8 @@ def load_service_spec(d: dict) -> ServiceSpec:
                     key=vkey,
                     environment=flatten_prefixed((vbody or {}).get("environment", {})),
                     secrets=[_load_secret(s) for s in (vbody or {}).get("secrets", [])],
+                    configs=_load_configs((vbody or {}).get("configs")),
+                    bind_mounts=_load_bind_mounts((vbody or {}).get("bind_mounts")),
                 )
                 for vkey, vbody in (body.get("variants") or {}).items()
             ]
@@ -322,6 +344,8 @@ def load_service_spec(d: dict) -> ServiceSpec:
                             key=key,
                             environment=flatten_prefixed(body.get("environment", {})),
                             secrets=[_load_secret(s) for s in body.get("secrets", [])],
+                            configs=_load_configs(body.get("configs")),
+                            bind_mounts=_load_bind_mounts(body.get("bind_mounts")),
                         )
                     ],
                 )

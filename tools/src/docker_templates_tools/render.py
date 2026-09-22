@@ -316,10 +316,44 @@ def render_extension(spec: ServiceSpec, group: ExtensionGroup, variant: Extensio
         lines.append("")
         lines.extend(frag({"secrets": [s.name for s in variant.secrets]}, 4))
 
+    if variant.configs:
+        lines.append("")
+        configs_list = [
+            {"source": c.name, "target": c.target, **({"mode": c.mode} if c.mode else {})}
+            for c in variant.configs
+        ]
+        lines.extend(frag({"configs": configs_list}, 4))
+
+    if variant.bind_mounts:
+        lines.append("")
+        vol_list = [
+            {
+                "type": "bind",
+                "source": bm.source,
+                "target": bm.target,
+                "read_only": bm.read_only,
+            }
+            for bm in variant.bind_mounts
+        ]
+        lines.extend(frag({"volumes": vol_list}, 4))
+
+    trailing_sections = []
+
     if variant.secrets:
         top_secrets = {s.name: {"file": secret_file(s, variant.key)} for s in variant.secrets}
+        trailing_sections.append(frag({"secrets": top_secrets}, 0))
+
+    if variant.configs:
+        configs_section = ["configs:"]
+        for i, c in enumerate(variant.configs):
+            if i > 0:
+                configs_section.append("")
+            configs_section.extend(frag({c.name: {"content": Literal(c.content)}}, 2))
+        trailing_sections.append(configs_section)
+
+    for i, section in enumerate(trailing_sections):
         lines.append("")
-        lines.extend(frag({"secrets": top_secrets}, 0))
+        lines.extend(section)
 
     lines.append("")
     return "\n".join(lines)
