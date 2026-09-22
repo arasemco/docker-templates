@@ -83,11 +83,13 @@ def test_resolve_stack_spec_passes_through_extra_fields():
             "app": "wordpress",
             "dep": ["mariadb", "redis"],
             "app_extra": {"secrets": ["redis_password"]},
+            "dep_extra": {"profiles": ["backend"]},
             "extra": {"configs": {}},
             "header_comment": "hi",
         }
     )
     assert resolved["app_extra"] == {"secrets": ["redis_password"]}
+    assert resolved["dep_extra"] == {"profiles": ["backend"]}
     assert resolved["extra"] == {"configs": {}}
     assert resolved["header_comment"] == "hi"
 
@@ -168,6 +170,28 @@ def test_render_stack_app_extra_merged_before_networks():
 
 def test_render_stack_app_extra_multiline_string_becomes_literal():
     out = render_stack(**_base_stack_kwargs(app_extra={"environment": {"X": "a\nb\n"}}))
+    assert "X: |\n" in out
+
+
+def test_render_stack_dep_extra_merged_before_networks_on_every_dep():
+    out = render_stack(
+        **_base_stack_kwargs(
+            deps=["mariadb", "redis"],
+            dep_includes=[
+                "../services/base/mariadb/docker-compose.yml",
+                "../services/base/redis/docker-compose.yml",
+            ],
+            dep_extra={"profiles": ["backend"]},
+        )
+    )
+    assert (
+        "  mariadb:\n    profiles:\n      - backend\n    networks:\n      - backend\n" in out
+    )
+    assert "  redis:\n    profiles:\n      - backend\n    networks:\n      - backend\n" in out
+
+
+def test_render_stack_dep_extra_multiline_string_becomes_literal():
+    out = render_stack(**_base_stack_kwargs(dep_extra={"environment": {"X": "a\nb\n"}}))
     assert "X: |\n" in out
 
 

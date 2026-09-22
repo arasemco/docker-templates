@@ -373,6 +373,7 @@ def resolve_stack_spec(d: dict) -> dict:
         "app_networks": d.get("app_networks"),
         "dep_networks": d.get("dep_networks"),
         "app_extra": d.get("app_extra"),
+        "dep_extra": d.get("dep_extra"),
         "extra_services": [resolve_extra_service(s) for s in d.get("extra_services", [])],
         "extra": d.get("extra"),
         "header_comment": d.get("header_comment"),
@@ -387,6 +388,7 @@ def render_stack(
     app_networks: list | None = None,
     dep_networks: list | None = None,
     app_extra: dict | None = None,
+    dep_extra: dict | None = None,
     extra_services: list | None = None,
     extra: dict | None = None,
     header_comment: str | None = None,
@@ -402,9 +404,13 @@ def render_stack(
     `app_extra` merges arbitrary compose keys into the app's own service
     block (before `networks`/`depends_on`) — this is where a hard,
     stack-specific bridge between two services belongs (e.g. wordpress's
-    redis cache wiring), never in either service's own spec. `extra` does
-    the same at the top level of the file (e.g. a `configs:` block backing
-    an extra_services entry).
+    redis cache wiring), never in either service's own spec. `dep_extra` is
+    the same, applied uniformly to every `dep` service's own block (before
+    `networks`) — there's no per-dep variant, since a stack's deps all play
+    the same role from the stack's point of view (e.g. tagging every dep
+    with a `backend`-tier profile). `extra` does the app_extra/dep_extra
+    thing at the top level of the file instead (e.g. a `configs:` block
+    backing an extra_services entry).
 
     extra_services entries are either a plain service name (just attached
     to `backend` — e.g. gitea-cli riding along with gitea) or a dict
@@ -482,6 +488,8 @@ def render_stack(
 
     for dep in deps:
         lines.append(f"  {dep}:")
+        if dep_extra:
+            lines.extend(frag(literalize(dep_extra), 4))
         lines.extend(frag({"networks": dep_networks}, 4))
         lines.append("")
 

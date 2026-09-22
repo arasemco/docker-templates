@@ -276,6 +276,11 @@ header_comment: |
   service block (before `networks:`/`depends_on:`) — this is where a hard,
   stack-specific bridge between two services belongs (wordpress's redis
   cache wiring), never in either service's own spec.
+- `dep_extra` is the same merge, applied uniformly to every `dep` service's
+  own block (before `networks:`) — there's no per-dep variant, since every
+  `dep` plays the same role from the stack's point of view. Used for e.g.
+  tagging every dep with a stack-tier profile (`backend`) that isn't part
+  of the dep's own generic spec.
 - `extra_services` is for anything beyond the plain app/deps set. Each
   entry is either a plain service name (rides `backend`, e.g. `gitea-cli`)
   or a dict:
