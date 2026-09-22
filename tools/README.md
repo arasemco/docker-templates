@@ -136,6 +136,17 @@ stack is just one file. Every generated file is parsed back with
 `yaml.safe_load` before being written, so a malformed spec fails loudly
 instead of producing broken YAML.
 
+With no `service`/`stack` subcommand, it regenerates every spec under
+`templates/specs/services/*.yaml` and `templates/specs/stacks/*.yaml` in
+one pass instead of a single named one — same `--force`/`--dry-run`
+semantics, just applied across the board:
+
+```sh
+cd tools
+uv run python -m docker_templates_tools --dry-run   # preview every spec's output
+uv run python -m docker_templates_tools --force     # regenerate everything
+```
+
 ### Running the tests
 
 ```sh

@@ -54,6 +54,8 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 TEMPLATES_DIR = REPO_ROOT / "templates"
 SERVICES_BASE = TEMPLATES_DIR / "services" / "base"
 STACKS_DIR = TEMPLATES_DIR / "stacks"
+SERVICE_SPECS_DIR = TEMPLATES_DIR / "specs" / "services"
+STACK_SPECS_DIR = TEMPLATES_DIR / "specs" / "stacks"
 
 
 # --------------------------------------------------------------------------
@@ -166,6 +168,44 @@ def scaffold_stack(d: dict, *, source: str, force: bool = False, dry_run: bool =
         print(f"wrote {readme_path.relative_to(REPO_ROOT)}")
 
 
+def _load_yaml_spec(path: Path) -> tuple[dict, str]:
+    spec_dict = yaml.safe_load(path.read_text())
+    try:
+        source = str(path.resolve().relative_to(REPO_ROOT))
+    except ValueError:
+        source = str(path)
+    return spec_dict, source
+
+
+def scaffold_all(*, force: bool = False, dry_run: bool = False) -> int:
+    """Regenerate every services/specs/*.yaml and stacks/specs/*.yaml spec.
+
+    Services first, then stacks — cosmetic ordering only (rendering never
+    reads generated output back off disk), but it matches the natural
+    dependency direction.
+    """
+    had_error = False
+
+    for spec_path in sorted(SERVICE_SPECS_DIR.glob("*.yaml")):
+        spec_dict, source = _load_yaml_spec(spec_path)
+        try:
+            spec = load_service_spec(spec_dict)
+            scaffold_service(spec, source=source, force=force, dry_run=dry_run)
+        except (FileExistsError, ValueError, KeyError) as e:
+            print(f"error: {source}: {e}", file=sys.stderr)
+            had_error = True
+
+    for spec_path in sorted(STACK_SPECS_DIR.glob("*.yaml")):
+        spec_dict, source = _load_yaml_spec(spec_path)
+        try:
+            scaffold_stack(spec_dict, source=source, force=force, dry_run=dry_run)
+        except (FileExistsError, ValueError, KeyError) as e:
+            print(f"error: {source}: {e}", file=sys.stderr)
+            had_error = True
+
+    return 1 if had_error else 0
+
+
 # --------------------------------------------------------------------------
 # CLI
 # --------------------------------------------------------------------------
@@ -175,7 +215,17 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    sub = parser.add_subparsers(dest="command", required=True)
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="with no subcommand, overwrite existing files while regenerating every spec",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="with no subcommand, print every generated file instead of writing it",
+    )
+    sub = parser.add_subparsers(dest="command")
 
     svc_p = sub.add_parser(
         "service", help="scaffold a services/base/<name>/ bundle from a YAML spec"
@@ -197,14 +247,13 @@ def main(argv=None) -> int:
 
     args = parser.parse_args(argv)
 
+    if args.command is None:
+        return scaffold_all(force=args.force, dry_run=args.dry_run)
+
     if not args.spec.exists():
         parser.error(f"spec file not found: {args.spec}")
 
-    spec_dict = yaml.safe_load(args.spec.read_text())
-    try:
-        source = str(args.spec.resolve().relative_to(REPO_ROOT))
-    except ValueError:
-        source = str(args.spec)
+    spec_dict, source = _load_yaml_spec(args.spec)
 
     try:
         if args.command == "service":

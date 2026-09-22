@@ -11,6 +11,8 @@ def isolated_repo(tmp_path, monkeypatch):
     monkeypatch.setattr(scaffold, "REPO_ROOT", tmp_path)
     monkeypatch.setattr(scaffold, "SERVICES_BASE", tmp_path / "services" / "base")
     monkeypatch.setattr(scaffold, "STACKS_DIR", tmp_path / "stacks")
+    monkeypatch.setattr(scaffold, "SERVICE_SPECS_DIR", tmp_path / "specs" / "services")
+    monkeypatch.setattr(scaffold, "STACK_SPECS_DIR", tmp_path / "specs" / "stacks")
     return tmp_path
 
 
@@ -190,3 +192,44 @@ def test_main_stack_dry_run(isolated_repo, capsys):
     # app_slug ("nginx-proxy-manager"), not the compose service key ("npm"),
     # names the output file.
     assert "----- stacks/docker-compose.nginx-proxy-manager-mariadb.yml -----" in captured.out
+
+
+# --------------------------------------------------------------------------
+# main() with no subcommand: regenerate every spec
+# --------------------------------------------------------------------------
+
+
+def _write_all_specs(tmp_path):
+    services_dir = tmp_path / "specs" / "services"
+    stacks_dir = tmp_path / "specs" / "stacks"
+    services_dir.mkdir(parents=True)
+    stacks_dir.mkdir(parents=True)
+    (services_dir / "redis.yaml").write_text("image: redis\n")
+    (stacks_dir / "stack.yaml").write_text("app: npm\napp_slug: nginx-proxy-manager\ndep: mariadb\n")
+
+
+def test_main_no_command_dry_run_previews_every_spec(isolated_repo, capsys):
+    _write_all_specs(isolated_repo)
+    rc = main(["--dry-run"])
+    assert rc == 0
+    captured = capsys.readouterr()
+    assert "----- services/base/redis/docker-compose.base.yml -----" in captured.out
+    assert "----- stacks/docker-compose.nginx-proxy-manager-mariadb.yml -----" in captured.out
+
+
+def test_main_no_command_without_force_errors_on_existing_output(isolated_repo, capsys):
+    _write_all_specs(isolated_repo)
+    assert main([]) == 0
+    rc = main([])
+    assert rc == 1
+    captured = capsys.readouterr()
+    assert "specs/services/redis.yaml" in captured.err
+    assert "specs/stacks/stack.yaml" in captured.err
+
+
+def test_main_no_command_force_regenerates_everything(isolated_repo):
+    _write_all_specs(isolated_repo)
+    assert main([]) == 0
+    assert main(["--force"]) == 0
+    assert (isolated_repo / "services" / "base" / "redis" / "docker-compose.yml").exists()
+    assert (isolated_repo / "stacks" / "docker-compose.nginx-proxy-manager-mariadb.yml").exists()
