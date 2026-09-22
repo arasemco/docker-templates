@@ -1,0 +1,50 @@
+image: adguard/adguardhome
+description: network-wide DNS ad blocker and resolver
+tag_default: "v0.107.74"
+
+service:
+  name: adguard-home
+
+display:
+  name: AdGuard Home
+
+environment:
+  TZ: "-tz:Europe/Paris"
+
+volumes:
+  work:
+    path: /opt/adguardhome/work
+    backup: true
+  conf:
+    path: /opt/adguardhome/conf
+    backup: true
+
+healthcheck:
+  test: ["CMD", "nslookup", "-type=a", "healthcheck.adguardhome.test", "127.0.0.1"]
+
+cpu_default: "1.0"
+mem_default: "512M"
+
+labels:
+  homepage.:
+    ping: "https://${STACK_DOMAIN}"
+    href: "https://${STACK_DOMAIN}"
+    widget.:
+      type: adguard
+      url: "http://adguard-home:80"
+      username: "${ADGUARD_HOME_HOMEPAGE_USERNAME}"
+      password: "${ADGUARD_HOME_HOMEPAGE_PASSWORD}"
+      fields: '["queries", "blocked", "filtered", "latency"]'
+
+header_comment: |
+  AdGuard Home — network-wide DNS ad blocker and resolver.
+  This base service only covers what's generic across deployments: image,
+  TZ, and its work/conf volumes. It intentionally has no ports, networks,
+  or depends_on here — this service needs host-published DNS ports on a
+  specific host IP, a custom network with a static IP/MAC (not the shared
+  internal `backend` network every other stack uses), and a dependency on
+  a `bind` service that isn't part of this generator's catalog. All of
+  that is per-deployment wiring and belongs in the consuming
+  docker-compose.yml that includes this file, the same way example_app/
+  layers ports/networks on top of a generated stack — never hand-added
+  here.

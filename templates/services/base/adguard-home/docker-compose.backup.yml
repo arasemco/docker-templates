@@ -1,0 +1,15 @@
+# Auto-generated from templates/specs/services/adguard-home.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+include:
+  - ../backup/docker-compose.yml
+
+x-volumes: &adguard-home-volumes
+  volumes:
+    - adguard-home_work:/mnt/opt/adguardhome/work
+    - adguard-home_conf:/mnt/opt/adguardhome/conf
+
+services:
+  backup: *adguard-home-volumes
+  restore:
+    <<: *adguard-home-volumes

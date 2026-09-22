@@ -1,0 +1,58 @@
+# Auto-generated from templates/specs/services/adguard-home.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  adguard-home:
+    image: adguard/adguardhome:${ADGUARD_HOME_TAG:-v0.107.74}
+    hostname: adguard-home.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: ${RESTART:-unless-stopped}
+    pull_policy: ${PULL_POLICY:-missing}
+
+    environment:
+      TZ: ${ADGUARD_HOME_TZ:-Europe/Paris}
+
+    volumes:
+      - type: volume
+        source: adguard-home_work
+        target: /opt/adguardhome/work
+        read_only: false
+      - type: volume
+        source: adguard-home_conf
+        target: /opt/adguardhome/conf
+        read_only: false
+
+    healthcheck:
+      test: ["CMD", "nslookup", "-type=a", "healthcheck.adguardhome.test", "127.0.0.1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${ADGUARD_HOME_CPU_LIMIT:-1.0}"
+          memory: ${ADGUARD_HOME_MEM_LIMIT:-512M}
+
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=AdGuard Home
+      - homepage.icon=adguard-home.png
+      - homepage.description=Network-wide dns ad blocker and resolver for ${COMPOSE_PROJECT_NAME}
+      - homepage.ping=https://${STACK_DOMAIN}
+      - homepage.href=https://${STACK_DOMAIN}
+      - homepage.widget.type=adguard
+      - homepage.widget.url=http://adguard-home:80
+      - homepage.widget.username=${ADGUARD_HOME_HOMEPAGE_USERNAME}
+      - homepage.widget.password=${ADGUARD_HOME_HOMEPAGE_PASSWORD}
+      - homepage.widget.fields=["queries", "blocked", "filtered", "latency"]
+
+volumes:
+  adguard-home_work:
+    labels:
+      - pro.asemo.description=AdGuard Home work directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=adguard-home
+  adguard-home_conf:
+    labels:
+      - pro.asemo.description=AdGuard Home conf directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=adguard-home

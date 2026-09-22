@@ -1,0 +1,19 @@
+# Auto-generated from templates/specs/services/adguard-home.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+# AdGuard Home — network-wide DNS ad blocker and resolver.
+# This base service only covers what's generic across deployments: image,
+# TZ, and its work/conf volumes. It intentionally has no ports, networks,
+# or depends_on here — this service needs host-published DNS ports on a
+# specific host IP, a custom network with a static IP/MAC (not the shared
+# internal `backend` network every other stack uses), and a dependency on
+# a `bind` service that isn't part of this generator's catalog. All of
+# that is per-deployment wiring and belongs in the consuming
+# docker-compose.yml that includes this file, the same way example_app/
+# layers ports/networks on top of a generated stack — never hand-added
+# here.
+
+include:
+  - docker-compose.backup.yml
+  - docker-compose.base.yml
+
