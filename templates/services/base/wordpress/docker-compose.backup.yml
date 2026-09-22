@@ -2,7 +2,7 @@
 # Edit the spec and regenerate; see tools/README.md.
 
 include:
-  - ../backup/docker-compose.yml
+  - ../../custom/backup/docker-compose.yml
 
 x-volumes: &wordpress-volumes
   volumes:

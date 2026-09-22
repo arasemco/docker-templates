@@ -112,7 +112,7 @@ def test_render_backup_no_owner_has_no_chown_script():
         {"image": "redis", "volumes": {"data": {"path": "/data", "backup": True}}}
     )
     out = render_backup(spec)
-    assert "include:\n  - ../backup/docker-compose.yml\n" in out
+    assert "include:\n  - ../../custom/backup/docker-compose.yml\n" in out
     assert "x-volumes: &redis-volumes" in out
     assert "redis_data:/mnt/redis" in out
     assert "chown" not in out

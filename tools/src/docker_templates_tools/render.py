@@ -252,7 +252,7 @@ def render_backup(spec: ServiceSpec) -> str:
     owned = [(source, p) for source, p in participants if p.owner is not None]
     anchor = f"{spec.dir_name}-volumes"
 
-    lines = ["include:", "  - ../backup/docker-compose.yml", ""]
+    lines = ["include:", "  - ../../custom/backup/docker-compose.yml", ""]
     vol_lines = [f"{source}:{p.backup_target}" for source, p in participants]
     lines.append(f"x-volumes: &{anchor}")
     lines.extend(frag({"volumes": vol_lines}, 2))
