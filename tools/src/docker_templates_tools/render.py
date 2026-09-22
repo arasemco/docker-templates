@@ -123,6 +123,7 @@ def render_base(spec: ServiceSpec) -> str:
     for sec in spec.secrets:
         if sec.env_var:
             env[sec.env_var] = f"/run/secrets/{sec.name}"
+    env = literalize(env)
     if env:
         lines.append("")
         lines.extend(frag({"environment": env}, 4))
@@ -306,6 +307,7 @@ def render_extension(spec: ServiceSpec, group: ExtensionGroup, variant: Extensio
     for sec in variant.secrets:
         if sec.env_var:
             env[sec.env_var] = f"/run/secrets/{sec.name}"
+    env = literalize(env)
 
     lines = ["services:", f"  {spec.service_name}:"]
     if env:
@@ -457,16 +459,17 @@ def render_stack(
     if app_extra:
         lines.extend(frag(literalize(app_extra), 4))
     lines.extend(frag({"networks": app_networks}, 4))
-    lines.extend(
-        frag(
-            {
-                "depends_on": {
-                    dep: {"condition": "service_healthy", "restart": True} for dep in deps
-                }
-            },
-            4,
+    if deps:
+        lines.extend(
+            frag(
+                {
+                    "depends_on": {
+                        dep: {"condition": "service_healthy", "restart": True} for dep in deps
+                    }
+                },
+                4,
+            )
         )
-    )
     lines.append("")
 
     for svc in extra_services:

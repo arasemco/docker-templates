@@ -1,0 +1,88 @@
+image: gitlab/gitlab-runner
+tag_required: true
+
+service:
+  name: gitlab-runner
+
+display:
+  name: GitLab Runner
+
+command: |
+  sh -c '
+  set -e
+  if ! grep -q "^\[\[runners\]\]" /etc/gitlab-runner/config.toml 2>/dev/null; then
+    gitlab-runner register --non-interactive \
+      --url "https://${STACK_DOMAIN}" \
+      --token "$$(cat /run/secrets/gitlab-runner_token)" \
+      --executor docker \
+      --docker-image "${GITLAB_RUNNER_DOCKER_IMAGE:-alpine:latest}" \
+      --docker-volumes /var/run/docker.sock:/var/run/docker.sock \
+      --description "gitlab-runner-${HOSTNAME:-local}"
+  fi
+  exec gitlab-runner run'
+
+secrets:
+  - name: token
+
+volumes:
+  config:
+    path: /etc/gitlab-runner
+    backup: true
+
+bind_mounts:
+  - source: /var/run/docker.sock
+    target: /var/run/docker.sock
+
+healthcheck:
+  test: ["CMD-SHELL", "pgrep -f 'gitlab-runner run' || exit 1"]
+
+cpu_default: "0.5"
+mem_default: "512M"
+
+extra:
+  profiles:
+    - ""
+    - gitlab-runner
+    - ci
+
+labels:
+  homepage.:
+    description: "CI runner for GitLab"
+    icon: gitlab.png
+
+header_comment: |
+  GitLab Runner — self-hosted CI runner for GitLab, using the docker
+  executor over a bind-mounted host docker socket (DooD, same trust model
+  as this repo's gitea/act-runner — see its own header_comment).
+
+  Registration is NOT env-var-automatic the way act-runner's is: the
+  stock image's entrypoint just runs `gitlab-runner run`, so this spec's
+  `command:` does its own one-time, idempotent `gitlab-runner register`
+  (gated on config.toml not already having a `[[runners]]` section — the
+  config volume persists it) before handing off to `gitlab-runner run`.
+  The `token` secret must be a *runner authentication token* (`glrt-...`,
+  created ahead of time via the GitLab UI/API — Admin Area > CI/CD >
+  Runners, or a project/group's Runners settings) — NOT the deprecated
+  per-project/group *registration token* GitLab removed default support
+  for in 16.0; `gitlab-runner register` rejects the old format.
+
+  GITLAB_RUNNER_DOCKER_IMAGE (default alpine:latest) is the fallback image
+  CI jobs run in when their own .gitlab-ci.yml doesn't set `image:`.
+
+  Security note beyond the usual DooD caveat: `--docker-volumes
+  /var/run/docker.sock:/var/run/docker.sock` also hands that same socket
+  to every CI JOB container this runner spins up, not just to this
+  container itself — anyone who can push a .gitlab-ci.yml to a project
+  this runner serves gets host-docker-equivalent access. Only register
+  this runner against projects/groups you trust.
+
+  cpu_default/mem_default (0.5/512M) cover the gitlab-runner process
+  itself only — job containers it spawns via the docker executor are
+  sibling containers, not children of this one's cgroup, so they are NOT
+  capped by these limits; constrain them separately via
+  `--docker-cpus`/`--docker-memory` in the register command above if
+  needed.
+
+  Never used standalone — wired in alongside a gitlab spec via a stack's
+  `extra_services`, same pattern as gitea/act-runner in
+  tools/specs/stacks/gitea-mariadb.yaml.

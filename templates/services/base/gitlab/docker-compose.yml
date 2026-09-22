@@ -1,0 +1,47 @@
+# Auto-generated from templates/specs/services/gitlab.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+# GitLab (Community Edition) — self-hosted Git service with CI/CD, issues,
+# container registry (disabled by default here) and more. Uses the
+# official omnibus image, which bundles its own PostgreSQL, Redis, and
+# Nginx inside the one container — unlike gitea/passbolt, there is
+# deliberately NO `database` extension here: GitLab only ever speaks
+# PostgreSQL (no MariaDB/MySQL support at all), and this repo has no
+# `postgres` base service yet to wire externally. Add one and an
+# extension later if an external Postgres is ever actually needed.
+#
+# Nearly everything is configured through the single GITLAB_OMNIBUS_CONFIG
+# env var (a Ruby/Chef attributes block — the image's sole configuration
+# interface), not discrete per-field env vars. That's also why the
+# `mailer` extension here looks different from gitea/passbolt's: it only
+# mounts the shared `smtp_password` secret (same
+# env/000-generic/smtp/password file they already use) — the actual
+# SMTP_HOST/PORT/FROM/etc. directives live inline in the base config above
+# as soft `${VAR:-}` defaults, since they can't be merged additively into
+# a separate environment dict the way gitea/passbolt's discrete SMTP_*
+# fields can. Mail stays off (smtp_enable defaults false) whether or not
+# the mailer extension is selected; selecting it only makes the secret
+# file available for smtp_password to actually read.
+#
+# No `owner:` set on the config/data volumes — the omnibus entrypoint
+# manages its own internal uid/gid via `gitlab-ctl reconfigure` on first
+# boot; guessing a uid here risks the restore script chowning files to the
+# wrong owner (see tools/.claude/skills/scaffold-service's warning on this
+# exact point). `logs` is intentionally not backed up (regenerable).
+#
+# cpu_default/mem_default (4.0/4G) reflect a realistic single-node
+# homelab baseline, not GitLab's own docs: they cite ~1 core/2GB as the
+# degraded-performance floor and 4 cores as the recommended minimum for
+# up to ~500 users — raise via GITLAB_CPU_LIMIT/GITLAB_MEM_LIMIT for real
+# usage. First boot commonly takes several minutes (the reconfigure run),
+# hence the 300s healthcheck start_period — likely still needs raising
+# further on slow storage.
+#
+# Ports (80/443/22) are deployment-specific, same convention as
+# haproxy/squid/adguard-home — publish or reverse-proxy them in the
+# consuming docker-compose.yml, not here.
+
+include:
+  - docker-compose.backup.yml
+  - docker-compose.base.yml
+

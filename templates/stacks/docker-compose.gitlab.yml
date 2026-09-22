@@ -1,0 +1,44 @@
+# Auto-generated from templates/specs/stacks/gitlab.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+# Composed template: GitLab + GitLab Runner.
+# No `dep` — unlike every other stack here, GitLab's own PostgreSQL/Redis
+# are bundled inside the gitlab service itself (see gitlab.yaml's
+# header_comment), so there is no separate database service to wire in.
+# gitlab-runner shares a dedicated `runner` network with gitlab (not
+# `backend`, which exists here only as the generator's usual base network
+# — nothing else actually needs it, same as gitea-mariadb.yaml's act-runner
+# keeps CI-runner traffic off the app/db network). Selects gitlab's smtp
+# mailer variant, same as gitea/passbolt — see gitlab.yaml's mailer
+# extension for what that actually does here (secret-mounting only).
+# Include this single file from a stack's docker-compose.yml; it needs no
+# other includes alongside it.
+
+include:
+  - path:
+      - ../services/base/gitlab/docker-compose.yml
+      - ../services/base/gitlab/mailer/docker-compose.smtp.yml
+  - ../services/base/gitlab-runner/docker-compose.yml
+
+services:
+  gitlab:
+    profiles:
+      - frontend
+    networks:
+      - backend
+      - runner
+
+  gitlab-runner:
+    profiles:
+      - backend
+    networks:
+      - runner
+    depends_on:
+      gitlab:
+        condition: service_healthy
+        restart: true
+
+networks:
+  backend:
+    internal: true
+  runner:

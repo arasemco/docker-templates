@@ -1,0 +1,110 @@
+# Auto-generated from templates/specs/services/gitlab.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  gitlab:
+    image: gitlab/gitlab-ce:${GITLAB_TAG:?GITLAB_TAG is required}
+    hostname: gitlab.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: ${RESTART:-unless-stopped}
+    pull_policy: ${PULL_POLICY:-missing}
+
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'https://${STACK_DOMAIN}'
+        # This is gitlab-shell's own internal SSH port, embedded verbatim into
+        # every clone URL GitLab generates — if the consuming docker-compose.yml
+        # publishes a non-standard host port for SSH (e.g. 2222->22), set
+        # GITLAB_SSH_PORT to that EXTERNAL port instead, not the container-side
+        # one, or generated clone URLs will point at the wrong port.
+        gitlab_rails['gitlab_shell_ssh_port'] = ${GITLAB_SSH_PORT:-22}
+
+        # Homelab-scale resource tuning — the omnibus defaults target a much
+        # larger multi-user instance than a single-node personal deployment
+        # needs; these are the knobs GitLab's own docs call out for a
+        # memory-constrained environment.
+        puma['worker_processes'] = ${GITLAB_PUMA_WORKERS:-2}
+        sidekiq['concurrency'] = ${GITLAB_SIDEKIQ_CONCURRENCY:-10}
+        prometheus_monitoring['enable'] = false
+        grafana['enable'] = false
+
+        # Registry and Pages are separate features with their own
+        # ports/storage/subdomains — deployment-specific, left disabled here
+        # rather than half-configured; same convention as this repo's
+        # adguard-home/haproxy/squid specs punting deployment-specific
+        # networking to the consuming docker-compose.yml.
+        registry['enable'] = false
+        gitlab_pages['enable'] = false
+
+        # Outbound mail — off unless the consuming stack sets SMTP_ENABLED and
+        # the other SMTP_* vars; smtp_password reads the mailer extension's
+        # shared secret only if that extension is actually selected (the file
+        # check keeps this safe to run standalone, without the extension, too).
+        gitlab_rails['smtp_enable'] = ${SMTP_ENABLED:-false}
+        gitlab_rails['smtp_address'] = "${SMTP_HOST:-}"
+        gitlab_rails['smtp_port'] = ${SMTP_PORT:-587}
+        gitlab_rails['smtp_domain'] = "${STACK_DOMAIN}"
+        gitlab_rails['smtp_user_name'] = "${SMTP_USERNAME:-}"
+        gitlab_rails['smtp_password'] = File.exist?('/run/secrets/smtp_password') ? File.read('/run/secrets/smtp_password').strip : nil
+        gitlab_rails['smtp_authentication'] = "login"
+        gitlab_rails['smtp_enable_starttls_auto'] = ${SMTP_TLS:-true}
+        gitlab_rails['gitlab_email_from'] = "${SMTP_FROM:-}"
+        gitlab_rails['gitlab_email_reply_to'] = "${SMTP_FROM:-}"
+
+    volumes:
+      - type: volume
+        source: gitlab_config
+        target: /etc/gitlab
+        read_only: false
+      - type: volume
+        source: gitlab_data
+        target: /var/opt/gitlab
+        read_only: false
+      - type: volume
+        source: gitlab_logs
+        target: /var/log/gitlab
+        read_only: false
+
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "-s", "-o", "/dev/null", "http://localhost/-/readiness"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 300s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${GITLAB_CPU_LIMIT:-4.0}"
+          memory: ${GITLAB_MEM_LIMIT:-4G}
+
+    profiles:
+      - ''
+      - gitlab
+      - git
+
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=GitLab
+      - homepage.icon=gitlab.png
+      - homepage.description=Self-hosted Git service (GitLab)
+      - homepage.ping=https://${STACK_DOMAIN}
+      - homepage.href=https://${STACK_DOMAIN}
+      - homepage.widget.type=gitlab
+      - homepage.widget.url=http://gitlab:80
+      - homepage.widget.key=${GITLAB_HOMEPAGE_API_KEY}
+      - homepage.widget.user_id=${GITLAB_HOMEPAGE_USER_ID}
+      - homepage.widget.fields=["events", "issues", "merges", "projects"]
+
+volumes:
+  gitlab_config:
+    labels:
+      - pro.asemo.description=GitLab config directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=gitlab
+  gitlab_data:
+    labels:
+      - pro.asemo.description=GitLab data directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=gitlab
+  gitlab_logs:
+    labels:
+      - pro.asemo.description=GitLab logs directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=gitlab
