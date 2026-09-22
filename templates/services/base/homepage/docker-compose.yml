@@ -1,0 +1,36 @@
+# Auto-generated from templates/specs/services/homepage.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+# Homepage — self-hosted dashboard, auto-discovering every other
+# service via its own `labels: homepage.*` block (this one included —
+# needs a real key, not the empty `homepage.: {}` idiom haproxy/squid
+# use, which silently renders no labels at all).
+#
+# Stateless by design: all config files come from `configs:`, not a
+# volume — override a config's `content:` in your own docker-compose.yml
+# for per-deployment customization.
+#
+# `docker` extension picks how it talks to Docker: `socket` (direct
+# root access to /var/run/docker.sock) or `proxy` (non-root, via
+# docker-socket-proxy over TCP — what tools/specs/stacks/homepage.yaml
+# actually uses). configs:/bind_mounts: on an Extension, not just
+# environment:, were added to the generator for this — see models.py/
+# render.py.
+#
+# `mcp` extension (`token` variant) turns on Homepage's built-in MCP
+# server. Token-based, not session-based, since HOMEPAGE_AUTH_ENABLED
+# would gate the whole dashboard behind login. HOMEPAGE_MCP_TOKEN is a
+# required secret (>= 32 chars) — it grants read access to every
+# service credential Homepage knows. HOMEPAGE_MCP_ALLOW_WRITE stays
+# false by default: enabling it lets a client rewrite custom.js, which
+# then runs in every visiting browser.
+#
+# HOMEPAGE_ALLOWED_HOSTS (host allowlist) and HOMEPAGE_EXTERNAL_URL
+# (marks auth cookies Secure) are different things, both from
+# STACK_DOMAIN. LOG_TARGETS defaults to stdout only, not the image's
+# own `both` (no volume to keep a log file in). No curl in this image —
+# healthcheck uses wget.
+
+include:
+  - docker-compose.base.yml
+

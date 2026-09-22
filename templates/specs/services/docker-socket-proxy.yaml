@@ -1,0 +1,59 @@
+image: tecnativa/docker-socket-proxy
+tag_required: true
+
+display:
+  name: Docker Socket Proxy
+
+environment:
+  CONTAINERS: "1"
+
+bind_mounts:
+  - source: /var/run/docker.sock
+    target: /var/run/docker.sock
+    read_only: true
+
+healthcheck:
+  test: ["CMD", "wget", "-qO-", "http://localhost:2375/containers/json"]
+
+cpu_default: "0.5"
+mem_default: "256M"
+
+labels:
+  homepage.:
+    description: "Scoped read-only proxy for the Docker API"
+
+extra:
+  profiles:
+    - ""
+    - docker-socket-proxy
+    - docker-proxy
+
+header_comment: |
+  Docker Socket Proxy (Tecnativa/docker-socket-proxy) — the only thing in
+  this repo that should ever bind-mount the real /var/run/docker.sock on
+  behalf of a read-only consumer. It's an HAProxy-based filter in front of
+  the real socket: every API group is denied by default, and only
+  CONTAINERS=1 is enabled here (List Containers + Inspect Container —
+  confirmed via a real running instance: /containers/json returns real
+  data, and this is the only scope Homepage's docker-label discovery
+  actually calls). Consumers talk to it over plain TCP on port 2375
+  (`host: docker-socket-proxy` / `port: 2375` in Homepage's docker.yaml,
+  e.g.), never touching the raw socket themselves — which is what lets a
+  consumer like homepage run as a normal non-root user instead of needing
+  root for direct socket access.
+
+  This service itself still runs as root and still needs the real socket
+  bind-mounted — someone has to — but now that's confined to one small,
+  actively-maintained, purpose-built image instead of every consumer
+  needing full root+raw-socket access individually. `read_only: true` on
+  the bind mount is defense-in-depth only, same caveat as this repo's
+  other docker-socket consumers (gitea/act-runner, gitlab-runner): it
+  stops this container from replacing/deleting the socket file, not what
+  Docker API calls reach it — the actual scoping is CONTAINERS=1 itself.
+
+  Add more scopes (IMAGES, NETWORKS, VOLUMES, INFO, POST, ...) only if a
+  future consumer genuinely needs them — verified empirically here that
+  /version returns 200 even without any scope enabled, so don't assume a
+  blocked response proves a flag is required; test against the specific
+  endpoint a consumer actually calls. Never used standalone — wired in
+  alongside homepage via tools/specs/stacks/homepage.yaml.

@@ -1,0 +1,32 @@
+app: homepage
+dep: []
+
+extensions:
+  docker: proxy
+  mcp: token
+
+app_extra:
+  profiles:
+    - frontend
+  depends_on:
+    docker-socket-proxy:
+      condition: service_healthy
+      restart: true
+
+extra_services:
+  - name: docker-socket-proxy
+    include: ../services/base/docker-socket-proxy/docker-compose.yml
+    extra:
+      profiles:
+        - backend
+
+header_comment: |
+  Composed template: Homepage + Docker Socket Proxy, with MCP enabled.
+  No `dep` — homepage has no database; docker-socket-proxy isn't one
+  either, so it's an extra_service like gitea/act-runner, just with the
+  dependency direction reversed (homepage depends on it, via
+  app_extra.depends_on). extensions: {docker: proxy} is the whole point
+  of this stack (a direct-socket `docker` deployment would just include
+  homepage's base + its own docker/docker-compose.socket.yml instead of
+  reusing this file). {mcp: token} needs HOMEPAGE_MCP_TOKEN set — see
+  homepage.yaml's header_comment for what that grants.

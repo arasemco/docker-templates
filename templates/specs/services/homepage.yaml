@@ -1,0 +1,113 @@
+image: docker.io/gethomepage/homepage
+tag_default: "v2.4.0"
+
+description: self-hosted dashboard, auto-discovers every other service via its own homepage.* labels
+
+environment:
+  HOMEPAGE_ALLOWED_HOSTS: "${STACK_DOMAIN}"
+  HOMEPAGE_EXTERNAL_URL: "https://${STACK_DOMAIN}"
+  LOG_TARGETS: "-log_targets:stdout"
+  LOG_LEVEL: "-log_level:info"
+
+configs:
+  - name: settings
+    target: /app/config/settings.yaml
+    content: |
+      []
+  - name: services
+    target: /app/config/services.yaml
+    content: |
+      []
+  - name: bookmarks
+    target: /app/config/bookmarks.yaml
+    content: |
+      []
+  - name: widgets
+    target: /app/config/widgets.yaml
+    content: |
+      []
+
+healthcheck:
+  test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1"]
+
+cpu_default: "0.5"
+mem_default: "256M"
+
+extra:
+  profiles:
+    - ""
+    - homepage
+    - dashboard
+
+labels:
+  homepage.:
+    description: "Self-hosted dashboard"
+    href: "https://${STACK_DOMAIN}"
+
+extensions:
+  docker:
+    variants:
+      socket:
+        environment:
+          PUID: "0"
+          PGID: "0"
+        bind_mounts:
+          - source: /var/run/docker.sock
+            target: /var/run/docker.sock
+            read_only: true
+        configs:
+          - name: docker
+            target: /app/config/docker.yaml
+            content: |
+              my-docker:
+                socket: /var/run/docker.sock
+      proxy:
+        environment:
+          PUID: "1000"
+          PGID: "1000"
+        configs:
+          - name: docker
+            target: /app/config/docker.yaml
+            content: |
+              my-docker:
+                host: docker-socket-proxy
+                port: 2375
+
+  mcp:
+    variants:
+      token:
+        environment:
+          HOMEPAGE_MCP_ENABLED: "true"
+          HOMEPAGE_MCP_TOKEN: "?key"
+          HOMEPAGE_MCP_ALLOW_WRITE: "-allow_write:false"
+
+header_comment: |
+  Homepage — self-hosted dashboard, auto-discovering every other
+  service via its own `labels: homepage.*` block (this one included —
+  needs a real key, not the empty `homepage.: {}` idiom haproxy/squid
+  use, which silently renders no labels at all).
+
+  Stateless by design: all config files come from `configs:`, not a
+  volume — override a config's `content:` in your own docker-compose.yml
+  for per-deployment customization.
+
+  `docker` extension picks how it talks to Docker: `socket` (direct
+  root access to /var/run/docker.sock) or `proxy` (non-root, via
+  docker-socket-proxy over TCP — what tools/specs/stacks/homepage.yaml
+  actually uses). configs:/bind_mounts: on an Extension, not just
+  environment:, were added to the generator for this — see models.py/
+  render.py.
+
+  `mcp` extension (`token` variant) turns on Homepage's built-in MCP
+  server. Token-based, not session-based, since HOMEPAGE_AUTH_ENABLED
+  would gate the whole dashboard behind login. HOMEPAGE_MCP_TOKEN is a
+  required secret (>= 32 chars) — it grants read access to every
+  service credential Homepage knows. HOMEPAGE_MCP_ALLOW_WRITE stays
+  false by default: enabling it lets a client rewrite custom.js, which
+  then runs in every visiting browser.
+
+  HOMEPAGE_ALLOWED_HOSTS (host allowlist) and HOMEPAGE_EXTERNAL_URL
+  (marks auth cookies Secure) are different things, both from
+  STACK_DOMAIN. LOG_TARGETS defaults to stdout only, not the image's
+  own `both` (no volume to keep a log file in). No curl in this image —
+  healthcheck uses wget.

@@ -1,0 +1,9 @@
+# Auto-generated from templates/specs/services/homepage.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  homepage:
+    environment:
+      HOMEPAGE_MCP_ENABLED: "true"
+      HOMEPAGE_MCP_TOKEN: ${TOKEN_KEY:?TOKEN_KEY is required}
+      HOMEPAGE_MCP_ALLOW_WRITE: ${TOKEN_ALLOW_WRITE:-false}

@@ -1,0 +1,24 @@
+# Auto-generated from templates/specs/services/homepage.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  homepage:
+    environment:
+      PUID: "0"
+      PGID: "0"
+
+    configs:
+      - source: socket_docker
+        target: /app/config/docker.yaml
+
+    volumes:
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+        read_only: true
+
+configs:
+  socket_docker:
+    content: |
+      my-docker:
+        socket: /var/run/docker.sock

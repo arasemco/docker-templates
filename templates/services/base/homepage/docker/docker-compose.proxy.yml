@@ -1,0 +1,19 @@
+# Auto-generated from templates/specs/services/homepage.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  homepage:
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+
+    configs:
+      - source: proxy_docker
+        target: /app/config/docker.yaml
+
+configs:
+  proxy_docker:
+    content: |
+      my-docker:
+        host: docker-socket-proxy
+        port: 2375
