@@ -5,6 +5,7 @@ services:
       service: passbolt
     profiles:
       - passbolt-cli
+      - debug
     entrypoint: ["/bin/bash"]
     restart: "no"
     healthcheck:
@@ -17,6 +18,10 @@ services:
   passbolt-init:
     extends:
       service: passbolt-cli
+    profiles:
+      - ""
+      - passbolt-init
+      - init
     depends_on:
       passbolt:
         condition: service_healthy

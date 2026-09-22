@@ -5,6 +5,7 @@ services:
       service: gitea
     profiles:
       - gitea-cli
+      - debug
     entrypoint: ["/bin/bash"]
     user: "1000:1000"
     restart: "no"
@@ -18,6 +19,10 @@ services:
   gitea-init:
     extends:
       service: gitea-cli
+    profiles:
+      - ""
+      - gitea-init
+      - init
     depends_on:
       gitea:
         condition: service_healthy

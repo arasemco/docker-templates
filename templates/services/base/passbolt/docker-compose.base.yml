@@ -43,6 +43,11 @@ services:
           cpus: "${PASSBOLT_CPU_LIMIT:-1.0}"
           memory: ${PASSBOLT_MEM_LIMIT:-512M}
 
+    profiles:
+      - ''
+      - passbolt
+      - password-manager
+
     labels:
       - homepage.group=${COMPOSE_PROJECT_NAME}
       - homepage.name=Passbolt

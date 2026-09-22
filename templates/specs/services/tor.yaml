@@ -18,6 +18,15 @@ volumes:
 cpu_default: "0.5"
 mem_default: "256M"
 
+extra:
+  profiles:
+    - ""
+    - tor
+    - anonymize
+    - anon
+    - forward-proxy
+    - fwd-proxy
+
 labels:
   homepage.:
     description: "Tor hidden service proxy for ${COMPOSE_PROJECT_NAME}"

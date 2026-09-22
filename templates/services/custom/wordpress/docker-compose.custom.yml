@@ -5,6 +5,7 @@ services:
       service: wordpress
     profiles:
       - wordpress-cli
+      - debug
     image: wordpress:cli
     hostname: wordpress-cli.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
     user: "33:33"
@@ -20,6 +21,10 @@ services:
   wordpress-init:
     extends:
       service: wordpress-cli
+    profiles:
+      - ""
+      - wordpress-init
+      - init
     depends_on:
       wordpress:
         condition: service_healthy

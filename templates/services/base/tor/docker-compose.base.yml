@@ -24,6 +24,14 @@ services:
           cpus: "${TOR_CPU_LIMIT:-0.5}"
           memory: ${TOR_MEM_LIMIT:-256M}
 
+    profiles:
+      - ''
+      - tor
+      - anonymize
+      - anon
+      - forward-proxy
+      - fwd-proxy
+
     labels:
       - homepage.group=${COMPOSE_PROJECT_NAME}
       - homepage.name=Tor

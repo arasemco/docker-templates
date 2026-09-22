@@ -40,6 +40,12 @@ bind_mounts:
 cpu_default: "1.0"
 mem_default: "1G"
 
+extra:
+  profiles:
+    - ""
+    - act-runner
+    - ci
+
 labels:
   homepage.:
     description: "CI runner for Gitea Actions"

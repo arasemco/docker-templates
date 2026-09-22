@@ -35,6 +35,12 @@ healthcheck:
 cpu_default: "1.0"
 mem_default: "512M"
 
+extra:
+  profiles:
+    - ""
+    - wordpress
+    - cms
+
 labels:
   homepage.:
     description: "Self-hosted WordPress site"

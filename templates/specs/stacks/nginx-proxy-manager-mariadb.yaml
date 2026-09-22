@@ -5,6 +5,14 @@ dep: mariadb
 extensions:
   database: mariadb
 
+app_extra:
+  profiles:
+    - frontend
+
+dep_extra:
+  profiles:
+    - backend
+
 header_comment: |
   Composed template: Nginx Proxy Manager + MariaDB.
   Wires base/nginx-proxy-manager and base/mariadb together on shared

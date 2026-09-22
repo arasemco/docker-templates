@@ -38,6 +38,11 @@ services:
           cpus: "${REDIS_CPU_LIMIT:-0.5}"
           memory: ${REDIS_MEM_LIMIT:-256M}
 
+    profiles:
+      - ''
+      - redis
+      - cache
+
     labels:
       - homepage.group=${COMPOSE_PROJECT_NAME}
       - homepage.name=Redis

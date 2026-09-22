@@ -15,6 +15,8 @@ include:
 
 services:
   passbolt:
+    profiles:
+      - frontend
     networks:
       - backend
     depends_on:
@@ -31,6 +33,8 @@ services:
       service: passbolt-cli
 
   mariadb:
+    profiles:
+      - backend
     networks:
       - backend
 

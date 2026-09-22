@@ -112,6 +112,10 @@ services:
       options:
         max-size: 10m
         max-file: '3'
+    profiles:
+      - ''
+      - gitea
+      - git
 
     labels:
       - homepage.group=${COMPOSE_PROJECT_NAME}

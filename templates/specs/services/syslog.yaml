@@ -37,6 +37,12 @@ healthcheck:
 cpu_default: "0.5"
 mem_default: "256M"
 
+extra:
+  profiles:
+    - ""
+    - syslog
+    - logging
+
 labels:
   homepage.:
     description: "Centralized syslog collector for ${COMPOSE_PROJECT_NAME}"

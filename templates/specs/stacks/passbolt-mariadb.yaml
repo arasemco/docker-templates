@@ -6,6 +6,14 @@ extensions:
 
 custom: true
 
+app_extra:
+  profiles:
+    - frontend
+
+dep_extra:
+  profiles:
+    - backend
+
 extra_services:
   - passbolt-cli
   - name: passbolt-init

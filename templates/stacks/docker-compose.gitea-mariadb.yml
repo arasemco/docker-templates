@@ -17,6 +17,8 @@ include:
 
 services:
   gitea:
+    profiles:
+      - frontend
     networks:
       - backend
       - runner
@@ -34,6 +36,8 @@ services:
       service: gitea-cli
 
   act-runner:
+    profiles:
+      - backend
     networks:
       - runner
     depends_on:
@@ -42,6 +46,8 @@ services:
         restart: true
 
   mariadb:
+    profiles:
+      - backend
     networks:
       - backend
 

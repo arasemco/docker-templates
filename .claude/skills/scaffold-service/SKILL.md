@@ -108,6 +108,40 @@ class of failure locally first.
      `"<description> for ${COMPOSE_PROJECT_NAME}"`, fine but generic). A
      leaf value that isn't a string (a list, a bool) gets JSON-encoded, so
      lists/dicts/bools come out correct without extra care.
+   - `profiles` (via the generic `extra:` passthrough — `extra: {profiles: [...]}`,
+     same mechanism as any other raw top-level service key not covered by a
+     dedicated field, e.g. haproxy's `experimental`) gates an optional
+     service behind `docker compose --profile <name>`/`COMPOSE_PROFILES`.
+     Verified empirically against this Compose version (see
+     `templates/specs/services/tor.yaml`): a service with **no** `profiles:`
+     key always starts. A service **with** `profiles:` only starts when one
+     of its listed names is in the active profile set — *except* that
+     including a literal `""` entry makes it also start whenever **no**
+     `--profile`/`COMPOSE_PROFILES` is given at all, i.e. plain
+     `docker compose up` with no flags. This is how tor gets both
+     "starts by default, no flag needed" and "selectable by name" at once.
+     **The gotcha:** `""` only covers the *no-profile-requested* case. The
+     moment *any* `--profile`/`COMPOSE_PROFILES` is passed for an unrelated
+     reason (e.g. `--profile squid` to bring up a different optional
+     service in the same file), `""` stops counting as active and a
+     `""`-gated service drops out — and if another service in the file has
+     a hard `depends_on:` on it (see `example_app/site2`'s `wordpress`
+     depending on `tor`), compose refuses to build the project at all
+     ("depends on undefined service"), not just silently skip it. Give a
+     `""`-gated service's own name profile explicitly (`--profile tor`) to
+     bring it back, or use profiles this way only where nothing else
+     hard-depends on the gated service in the same compose file. Multiple
+     profile names are otherwise plain OR-matched — reuse the same spelling
+     across services with the same role (`forward-proxy`/`fwd-proxy` on
+     both `tor` and `squid`) rather than inventing a new one per service.
+     **`extends:` has the identical gotcha** — it also unions `profiles:`
+     from whatever it extends. Before adding `""` to any service, check
+     nothing else `extends:` it (e.g. a `-cli`/`-init`/`restore` companion);
+     if something does, that companion silently inherits `""` too. See
+     `templates/services/base/backup/{docker-compose.base.yml,docker-compose.yml}`
+     for the fix when the extended-by service must never default on
+     (`restore` is destructive — split the base definition from a thin
+     wrapper that adds `""` only to the service nothing extends).
    - `header_comment` (a plain multi-line string, no `#` prefixes) renders
      as a leading comment block on `docker-compose.yml` — a one-glance
      summary of what the service is and any non-obvious fact worth knowing
@@ -254,12 +288,15 @@ Cross-service wiring that's specific to one particular stack (e.g.
 wordpress reading redis's connection details into its own config) belongs
 in the stack spec, not bolted onto the generated file by hand afterward:
 `app_extra` merges arbitrary compose keys straight into the app's own
-service block (`secrets`/`environment`), and a top-level `extra:` merges
+service block (`secrets`/`environment`), `dep_extra` does the same merge
+uniformly across every `dep` service's own block (no per-dep variant —
+e.g. tagging every dep with a `backend`-tier `profiles:` entry that isn't
+part of the dep's own generic spec), and a top-level `extra:` merges
 keys into the file's root (a `configs:` block backing one of those
 `environment` values) — see `templates/specs/stacks/wordpress-mariadb-redis.yaml`.
-Any multi-line string anywhere in `app_extra`/`extra_services[].extra`/the
-top-level `extra` automatically renders as a proper YAML block literal, not
-a folded/quoted mess.
+Any multi-line string anywhere in `app_extra`/`dep_extra`/
+`extra_services[].extra`/the top-level `extra` automatically renders as a
+proper YAML block literal, not a folded/quoted mess.
 
 ## If something doesn't fit the schema
 

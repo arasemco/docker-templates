@@ -41,6 +41,12 @@ services:
           cpus: "${MYSQL_CPU_LIMIT:-1.0}"
           memory: ${MYSQL_MEM_LIMIT:-1G}
 
+    profiles:
+      - ''
+      - mysql
+      - database
+      - db
+
     labels:
       - homepage.group=${COMPOSE_PROJECT_NAME}
       - homepage.name=MySQL

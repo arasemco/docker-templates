@@ -27,6 +27,8 @@ services:
         define('WP_CACHE_KEY_SALT', 'wp_');
         define('WP_CACHE', true);
         define('WP_REDIS_MAXTTL', 3600);
+    profiles:
+      - frontend
     networks:
       - backend
     depends_on:
@@ -38,10 +40,14 @@ services:
         restart: true
 
   mariadb:
+    profiles:
+      - backend
     networks:
       - backend
 
   redis:
+    profiles:
+      - backend
     networks:
       - backend
 

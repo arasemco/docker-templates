@@ -35,6 +35,11 @@ services:
           cpus: "${WORDPRESS_CPU_LIMIT:-1.0}"
           memory: ${WORDPRESS_MEM_LIMIT:-512M}
 
+    profiles:
+      - ''
+      - wordpress
+      - cms
+
     labels:
       - homepage.group=${COMPOSE_PROJECT_NAME}
       - homepage.name=WordPress

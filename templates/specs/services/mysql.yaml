@@ -39,6 +39,13 @@ healthcheck:
 cpu_default: "1.0"
 mem_default: "1G"
 
+extra:
+  profiles:
+    - ""
+    - mysql
+    - database
+    - db
+
 labels:
   homepage.:
     description: "Relational database for ${COMPOSE_PROJECT_NAME}"

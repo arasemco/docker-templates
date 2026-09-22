@@ -37,6 +37,13 @@ healthcheck:
 cpu_default: "1.0"
 mem_default: "512M"
 
+extra:
+  profiles:
+    - ""
+    - npm
+    - reverse-proxy
+    - rev-proxy
+
 labels:
   homepage.:
     description: "Reverse proxy and SSL certificate manager"

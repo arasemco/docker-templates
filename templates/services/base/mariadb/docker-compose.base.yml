@@ -42,6 +42,12 @@ services:
           cpus: "${MARIADB_CPU_LIMIT:-1.0}"
           memory: ${MARIADB_MEM_LIMIT:-1G}
 
+    profiles:
+      - ''
+      - mariadb
+      - database
+      - db
+
     labels:
       - homepage.group=${COMPOSE_PROJECT_NAME}
       - homepage.name=MariaDB

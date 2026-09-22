@@ -34,6 +34,11 @@ services:
           cpus: "${ADGUARD_HOME_CPU_LIMIT:-1.0}"
           memory: ${ADGUARD_HOME_MEM_LIMIT:-512M}
 
+    profiles:
+      - ''
+      - adguard-home
+      - dns
+
     labels:
       - homepage.group=${COMPOSE_PROJECT_NAME}
       - homepage.name=AdGuard Home

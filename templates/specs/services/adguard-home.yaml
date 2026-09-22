@@ -25,6 +25,12 @@ healthcheck:
 cpu_default: "1.0"
 mem_default: "512M"
 
+extra:
+  profiles:
+    - ""
+    - adguard-home
+    - dns
+
 labels:
   homepage.:
     ping: "https://${STACK_DOMAIN}"

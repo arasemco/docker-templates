@@ -39,6 +39,11 @@ services:
           cpus: "${SYSLOG_CPU_LIMIT:-0.5}"
           memory: ${SYSLOG_MEM_LIMIT:-256M}
 
+    profiles:
+      - ''
+      - syslog
+      - logging
+
     labels:
       - homepage.group=${COMPOSE_PROJECT_NAME}
       - homepage.name=Syslog

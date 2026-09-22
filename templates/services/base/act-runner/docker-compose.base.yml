@@ -45,6 +45,11 @@ services:
           cpus: "${ACT_RUNNER_CPU_LIMIT:-1.0}"
           memory: ${ACT_RUNNER_MEM_LIMIT:-1G}
 
+    profiles:
+      - ''
+      - act-runner
+      - ci
+
     labels:
       - homepage.group=${COMPOSE_PROJECT_NAME}
       - homepage.name=Gitea Act Runner

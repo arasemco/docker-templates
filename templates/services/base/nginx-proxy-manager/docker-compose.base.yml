@@ -31,6 +31,12 @@ services:
           cpus: "${NPM_CPU_LIMIT:-1.0}"
           memory: ${NPM_MEM_LIMIT:-512M}
 
+    profiles:
+      - ''
+      - npm
+      - reverse-proxy
+      - rev-proxy
+
     labels:
       - homepage.group=${COMPOSE_PROJECT_NAME}
       - homepage.name=Nginx Proxy Manager

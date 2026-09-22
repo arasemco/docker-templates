@@ -20,6 +20,12 @@ app_extra:
       define('WP_CACHE_KEY_SALT', 'wp_');
       define('WP_CACHE', true);
       define('WP_REDIS_MAXTTL', 3600);
+  profiles:
+    - frontend
+
+dep_extra:
+  profiles:
+    - backend
 
 extra:
   configs:
