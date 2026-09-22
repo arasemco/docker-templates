@@ -20,3 +20,9 @@ services:
       - reverse-proxy
       - rev-proxy
 
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=HAProxy
+      - homepage.icon=haproxy.png
+      - homepage.description=TCP passthrough load balancer
+

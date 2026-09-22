@@ -12,7 +12,8 @@ extra:
     - fwd-proxy
 
 labels:
-  homepage.: {}
+  homepage.:
+    description: "Forward/caching HTTP proxy"
 
 header_comment: |
   Squid — forward/caching HTTP proxy.

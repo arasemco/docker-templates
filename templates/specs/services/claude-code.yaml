@@ -19,6 +19,10 @@ healthcheck:
 cpu_default: "8"
 mem_default: "32G"
 
+labels:
+  homepage.:
+    description: "Persistent Claude Code CLI sandbox"
+
 extra:
   init: true
   stdin_open: true

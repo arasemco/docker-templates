@@ -48,3 +48,9 @@ services:
       - This is your persistent Claude Code container. Remote Control is enabled, so stand by for a connection.
       - --remote-control
 
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=Claude Code
+      - homepage.icon=claude-code.png
+      - homepage.description=Persistent Claude Code CLI sandbox
+

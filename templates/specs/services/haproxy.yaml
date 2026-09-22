@@ -15,7 +15,8 @@ cpu_default: "0.5"
 mem_default: "256M"
 
 labels:
-  homepage.: {}
+  homepage.:
+    description: "TCP passthrough load balancer"
 
 header_comment: |
   HAProxy — TCP passthrough load balancer.

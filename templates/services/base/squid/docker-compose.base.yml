@@ -20,3 +20,9 @@ services:
       - forward-proxy
       - fwd-proxy
 
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=Squid
+      - homepage.icon=squid.png
+      - homepage.description=Forward/caching HTTP proxy
+
