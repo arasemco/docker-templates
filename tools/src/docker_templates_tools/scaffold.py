@@ -150,7 +150,11 @@ def scaffold_stack(d: dict, *, source: str, force: bool = False, dry_run: bool =
     deps = d["dep"] if isinstance(d["dep"], list) else [d["dep"]]
     app_slug = d.get("app_slug", d["app"])
     dep_slug = d.get("dep_slug", "-".join(deps))
-    filename = f"docker-compose.{app_slug}-{dep_slug}.yml" if dep_slug else f"docker-compose.{app_slug}.yml"
+    filename = (
+        f"docker-compose.{app_slug}-{dep_slug}.yml"
+        if dep_slug
+        else f"docker-compose.{app_slug}.yml"
+    )
     out_path = STACKS_DIR / filename
     _emit(out_path, content, source=source, force=force, dry_run=dry_run)
 

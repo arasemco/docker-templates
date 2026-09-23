@@ -184,9 +184,7 @@ def test_render_stack_dep_extra_merged_before_networks_on_every_dep():
             dep_extra={"profiles": ["backend"]},
         )
     )
-    assert (
-        "  mariadb:\n    profiles:\n      - backend\n    networks:\n      - backend\n" in out
-    )
+    assert "  mariadb:\n    profiles:\n      - backend\n    networks:\n      - backend\n" in out
     assert "  redis:\n    profiles:\n      - backend\n    networks:\n      - backend\n" in out
 
 

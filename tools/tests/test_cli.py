@@ -205,7 +205,9 @@ def _write_all_specs(tmp_path):
     services_dir.mkdir(parents=True)
     stacks_dir.mkdir(parents=True)
     (services_dir / "redis.yaml").write_text("image: redis\n")
-    (stacks_dir / "stack.yaml").write_text("app: npm\napp_slug: nginx-proxy-manager\ndep: mariadb\n")
+    (stacks_dir / "stack.yaml").write_text(
+        "app: npm\napp_slug: nginx-proxy-manager\ndep: mariadb\n"
+    )
 
 
 def test_main_no_command_dry_run_previews_every_spec(isolated_repo, capsys):
