@@ -1,0 +1,29 @@
+# Requires a .env file next to this one (see
+# templates/specs/services/n8n.yaml's header_comment and the SKILL's
+# interpolation-order gotcha for why these can't go in a `services:`
+# override below):
+#   STACK_DOMAIN=n8n.example.com
+#   N8N_TAG=1.100.0
+# Everything else in the spec (timezone, package/runner/compression
+# tuning) has a working default and only needs overriding if you actually
+# want something different.
+#
+# This is a standalone deployment, not a stack: n8n has no dependency on
+# anything else in this repo, so there's no
+# templates/stacks/docker-compose.n8n-*.yml to include here. It joins one
+# pre-existing, externally-managed network instead of this repo's
+# per-stack internal `backend` network — same `external: true` pattern as
+# example_app/gitea's and example_app/postfix's.
+
+include:
+  - ../../templates/services/base/n8n/docker-compose.yml
+
+services:
+  n8n:
+    networks:
+      - frontend
+
+networks:
+  frontend:
+    name: domain_reverse-proxy
+    external: true

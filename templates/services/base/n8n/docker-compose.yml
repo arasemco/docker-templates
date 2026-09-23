@@ -1,0 +1,19 @@
+# Auto-generated from templates/specs/services/n8n.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+# n8n — workflow automation platform, single container on its default
+# SQLite storage. n8n also supports Postgres; no database extension here
+# since nothing needs it yet (same gap as gitlab's spec — add a postgres
+# base service + extension later if a real deployment needs one).
+#
+# Dropped N8N_BASIC_AUTH_ACTIVE from the source compose: confirmed absent
+# from every current n8n doc (deployment/security/user-management) — it
+# predates n8n's own user-management login and has no effect now.
+#
+# No stack spec: no in-repo dependency, so it's wired into whatever
+# network it needs by hand in example_app/n8n/.
+
+include:
+  - docker-compose.backup.yml
+  - docker-compose.base.yml
+

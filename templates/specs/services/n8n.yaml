@@ -1,0 +1,72 @@
+image: n8nio/n8n
+tag_required: true
+
+display:
+  name: n8n
+
+description: workflow automation platform
+
+environment:
+  N8N_HOST: ${STACK_DOMAIN}
+  N8N_PORT: 5678
+  N8N_PROTOCOL: http
+  N8N_PROXY_HOPS: 1
+  N8N_EDITOR_BASE_URL: https://${STACK_DOMAIN}
+
+  N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+  N8N_MIGRATE_FS_STORAGE_PATH: "true"
+
+  GENERIC_TIMEZONE: "-timezone:UTC"
+  TZ: "-timezone:UTC"
+
+  N8N_RESTRICT_FILE_ACCESS_TO: /home/node/Share
+  N8N_UNVERIFIED_PACKAGES_ENABLED: "-unverified_packages_enabled:true"
+  N8N_RUNNERS_TASK_TIMEOUT: "-runners_task_timeout:300"
+  N8N_COMPRESSION_NODE_MAX_DECOMPRESSED_SIZE_BYTES: "-compression_max_decompressed_bytes:268435456"
+  N8N_COMPRESSION_NODE_MAX_ZIP_ENTRIES: "-compression_max_zip_entries:1000"
+
+volumes:
+  data:
+    path: /home/node/.n8n
+    backup: true
+    owner:
+      uid: 1000
+      gid: 1000
+  share:
+    path: /home/node/Share
+    backup: true
+    owner:
+      uid: 1000
+      gid: 1000
+
+healthcheck:
+  test: ["CMD", "wget", "-qO-", "http://localhost:5678/healthz/readiness"]
+
+cpu_default: "1.0"
+mem_default: "1G"
+
+extra:
+  profiles:
+    - ""
+    - n8n
+    - automation
+    - workflow
+
+labels:
+  homepage.:
+    description: "Workflow automation for ${COMPOSE_PROJECT_NAME}"
+    ping: "https://${STACK_DOMAIN}"
+    href: "https://${STACK_DOMAIN}"
+
+header_comment: |
+  n8n — workflow automation platform, single container on its default
+  SQLite storage. n8n also supports Postgres; no database extension here
+  since nothing needs it yet (same gap as gitlab's spec — add a postgres
+  base service + extension later if a real deployment needs one).
+
+  Dropped N8N_BASIC_AUTH_ACTIVE from the source compose: confirmed absent
+  from every current n8n doc (deployment/security/user-management) — it
+  predates n8n's own user-management login and has no effect now.
+
+  No stack spec: no in-repo dependency, so it's wired into whatever
+  network it needs by hand in example_app/n8n/.

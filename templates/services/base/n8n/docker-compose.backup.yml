@@ -1,0 +1,30 @@
+# Auto-generated from templates/specs/services/n8n.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+include:
+  - ../../custom/backup/docker-compose.yml
+
+x-volumes: &n8n-volumes
+  volumes:
+    - n8n_data:/mnt/n8n
+    - n8n_share:/mnt/home/node/Share
+
+services:
+  backup: *n8n-volumes
+  restore:
+    <<: *n8n-volumes
+    configs:
+      - source: n8n_restore_00_owner
+        target: /srv/configs/restore.d/00-n8n-owner.sh
+
+configs:
+  n8n_restore_00_owner:
+    content: |
+      set -e
+      chown -R 1000:1000 /mnt/n8n
+      find /mnt/n8n -type d -exec chmod 700 {} +
+      find /mnt/n8n -type f -exec chmod 600 {} +
+
+      chown -R 1000:1000 /mnt/home/node/Share
+      find /mnt/home/node/Share -type d -exec chmod 700 {} +
+      find /mnt/home/node/Share -type f -exec chmod 600 {} +

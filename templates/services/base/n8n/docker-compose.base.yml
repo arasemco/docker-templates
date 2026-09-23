@@ -1,0 +1,72 @@
+# Auto-generated from templates/specs/services/n8n.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  n8n:
+    image: n8nio/n8n:${N8N_TAG:?N8N_TAG is required}
+    hostname: n8n.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: ${RESTART:-unless-stopped}
+    pull_policy: ${PULL_POLICY:-missing}
+
+    environment:
+      N8N_HOST: ${STACK_DOMAIN}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      N8N_PROXY_HOPS: 1
+      N8N_EDITOR_BASE_URL: https://${STACK_DOMAIN}
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      N8N_MIGRATE_FS_STORAGE_PATH: "true"
+      GENERIC_TIMEZONE: ${N8N_TIMEZONE:-UTC}
+      TZ: ${N8N_TIMEZONE:-UTC}
+      N8N_RESTRICT_FILE_ACCESS_TO: /home/node/Share
+      N8N_UNVERIFIED_PACKAGES_ENABLED: ${N8N_UNVERIFIED_PACKAGES_ENABLED:-true}
+      N8N_RUNNERS_TASK_TIMEOUT: ${N8N_RUNNERS_TASK_TIMEOUT:-300}
+      N8N_COMPRESSION_NODE_MAX_DECOMPRESSED_SIZE_BYTES: ${N8N_COMPRESSION_MAX_DECOMPRESSED_BYTES:-268435456}
+      N8N_COMPRESSION_NODE_MAX_ZIP_ENTRIES: ${N8N_COMPRESSION_MAX_ZIP_ENTRIES:-1000}
+
+    volumes:
+      - type: volume
+        source: n8n_data
+        target: /home/node/.n8n
+        read_only: false
+      - type: volume
+        source: n8n_share
+        target: /home/node/Share
+        read_only: false
+
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5678/healthz/readiness"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${N8N_CPU_LIMIT:-1.0}"
+          memory: ${N8N_MEM_LIMIT:-1G}
+
+    profiles:
+      - ''
+      - n8n
+      - automation
+      - workflow
+
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=n8n
+      - homepage.icon=n8n.png
+      - homepage.description=Workflow automation for ${COMPOSE_PROJECT_NAME}
+      - homepage.ping=https://${STACK_DOMAIN}
+      - homepage.href=https://${STACK_DOMAIN}
+
+volumes:
+  n8n_data:
+    labels:
+      - pro.asemo.description=n8n data directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=n8n
+  n8n_share:
+    labels:
+      - pro.asemo.description=n8n share directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=n8n
