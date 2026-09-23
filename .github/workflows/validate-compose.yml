@@ -9,7 +9,24 @@ jobs:
   compose-config:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+
+      - name: Install Docker Compose v5.5.1
+        # ubuntu-latest's bundled Compose (2.38.2) treats two included files
+        # that both define the same service name as a hard error
+        # ("services.<name> conflicts with imported resource"), even though
+        # every generated docker-compose.yml here relies on exactly that
+        # merging (base + backup + extension layers, all same service name)
+        # - this fails on literally every file, always has. Compose 5.5.1
+        # merges them correctly; install it explicitly rather than trusting
+        # whatever the runner happens to bundle.
+        run: |
+          mkdir -p ~/.docker/cli-plugins
+          curl -sL "https://github.com/docker/compose/releases/download/v5.5.1/docker-compose-linux-x86_64" \
+            -o ~/.docker/cli-plugins/docker-compose
+          echo "db1889184726840f75c4f9c001048430d4f25b3be3cb084d3ddd762bc0aed576  $HOME/.docker/cli-plugins/docker-compose" | sha256sum -c -
+          chmod +x ~/.docker/cli-plugins/docker-compose
+          docker compose version
 
       - name: Generate dummy env for required variables
         run: |
