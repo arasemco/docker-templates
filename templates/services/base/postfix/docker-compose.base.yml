@@ -1,0 +1,41 @@
+# Auto-generated from templates/specs/services/postfix.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  postfix:
+    image: boky/postfix:${POSTFIX_TAG:?POSTFIX_TAG is required}
+    hostname: postfix.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: ${RESTART:-unless-stopped}
+    pull_policy: ${PULL_POLICY:-missing}
+
+    environment:
+      POSTFIX_myhostname: ${POSTFIX_MYHOSTNAME:-postfix.internal}
+      POSTFIX_mynetworks: 127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+      ALLOWED_SENDER_DOMAINS: ${POSTFIX_SENDER_DOMAINS:?POSTFIX_SENDER_DOMAINS is required}
+      ALLOW_EMPTY_SENDER_DOMAINS: ${POSTFIX_ALLOW_EMPTY_SENDER_DOMAINS:-false}
+
+    healthcheck:
+      test: ["CMD", "postfix", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${POSTFIX_CPU_LIMIT:-0.25}"
+          memory: ${POSTFIX_MEM_LIMIT:-128M}
+
+    profiles:
+      - ''
+      - postfix
+      - smtp-relay
+      - mailer
+
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=Postfix
+      - homepage.icon=https://upload.wikimedia.org/wikipedia/commons/3/36/Postfix-logo.svg
+      - homepage.description=Outbound SMTP relay for ${COMPOSE_PROJECT_NAME}
+

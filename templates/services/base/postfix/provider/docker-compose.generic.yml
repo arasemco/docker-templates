@@ -1,0 +1,17 @@
+# Auto-generated from templates/specs/services/postfix.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  postfix:
+    environment:
+      RELAYHOST: ${GENERIC_RELAYHOST:?GENERIC_RELAYHOST is required}
+      RELAYHOST_USERNAME: ${GENERIC_USERNAME:?GENERIC_USERNAME is required}
+      POSTFIX_smtp_tls_security_level: encrypt
+      RELAYHOST_PASSWORD_FILE: /run/secrets/generic_password
+
+    secrets:
+      - generic_password
+
+secrets:
+  generic_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/generic_password

@@ -1,0 +1,19 @@
+# Auto-generated from templates/specs/services/postfix.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+# Postfix relay-only mail forwarder (boky/postfix) — forwards mail from
+# trusted internal networks to an upstream relay. No volumes: fully
+# stateless, nothing to back up. Never add a `ports:` block here.
+#
+# Needs a `provider` extension (ovh/generic) picked by whoever deploys
+# this — RELAYHOST/username/password and the TLS/SASL settings all live
+# per-variant, not here, so each provider gets its own env var/secret
+# naming (ovh_password vs generic_password).
+#
+# No stack spec: nothing else in this repo depends on it, so it attaches
+# to a pre-existing external network by hand in `example_app/postfix/`
+# instead of this repo's per-stack `backend` network.
+
+include:
+  - docker-compose.base.yml
+

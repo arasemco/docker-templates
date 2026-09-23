@@ -1,0 +1,43 @@
+# Requires a .env file next to this one (Compose interpolates the
+# included base file's ${VAR:?...} at parse time, before this file's own
+# overrides ever apply — see templates/specs/services/postfix.yaml's
+# header_comment — so these can't be supplied as a `services:` override
+# below, only as real Compose substitution variables):
+#   STACK_DOMAIN=local                          # meaningless here, just required to load
+#   POSTFIX_TAG=v5.1.0-alpine
+#   POSTFIX_SENDER_DOMAINS=example.com
+#   OVH_RELAYHOST=[pro2.mail.ovh.net]:587       # provider-specific: OVH variant
+#   OVH_USERNAME=smtp-user@example.com          # provider-specific: OVH variant
+# Plus the ovh_password secret file at
+# ${SECRETS_DIR}/env/${COMPOSE_PROJECT_NAME}/ovh_password (provider-specific
+# too — switching to provider/docker-compose.generic.yml below switches
+# these to GENERIC_RELAYHOST/GENERIC_USERNAME/generic_password instead).
+#
+# This is a standalone deployment, not a stack: postfix has no
+# dependency on anything else in this repo, so there's no
+# templates/stacks/docker-compose.postfix-*.yml to include here (a stack
+# spec is also where an extensions: choice would normally be derived from
+# — with none here, the provider variant below is included by hand
+# instead). It joins one pre-existing, externally-managed network instead
+# of this repo's per-stack internal `backend` network — same
+# `external: true` pattern as example_app/site2's `frontend` network and
+# example_app/gitea's.
+#
+# `provider: ovh` here since RELAYHOST above is OVH's Pro Exchange relay;
+# swap to `provider/docker-compose.generic.yml` for any other provider —
+# see templates/specs/services/postfix.yaml's header_comment.
+
+include:
+  - ../../templates/services/base/postfix/docker-compose.yml
+  - ../../templates/services/base/postfix/provider/docker-compose.ovh.yml
+
+services:
+  postfix:
+    networks:
+      - internal_mail
+    # NOTE: no ports: block — never expose 587 to the host or internet
+
+networks:
+  internal_mail:
+    name: domain_reverse-proxy
+    external: true

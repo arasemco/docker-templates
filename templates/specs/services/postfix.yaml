@@ -1,0 +1,64 @@
+image: boky/postfix
+tag_required: true
+
+description: outbound SMTP relay
+
+environment:
+  POSTFIX_myhostname: "-myhostname:postfix.internal"
+
+  POSTFIX_mynetworks: 127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+  ALLOWED_SENDER_DOMAINS: "?sender_domains"
+  ALLOW_EMPTY_SENDER_DOMAINS: "-allow_empty_sender_domains:false"
+
+healthcheck:
+  test: ["CMD", "postfix", "status"]
+
+cpu_default: "0.25"
+mem_default: "128M"
+
+extra:
+  profiles:
+    - ""
+    - postfix
+    - smtp-relay
+    - mailer
+
+labels:
+  homepage.:
+    description: "Outbound SMTP relay for ${COMPOSE_PROJECT_NAME}"
+    icon: "https://upload.wikimedia.org/wikipedia/commons/3/36/Postfix-logo.svg"
+
+extensions:
+  provider:
+    variants:
+      ovh:
+        environment:
+          RELAYHOST: "?relayhost"          # e.g. [pro2.mail.ovh.net]:587
+          RELAYHOST_USERNAME: "?username"
+          POSTFIX_smtp_tls_security_level: encrypt
+          POSTFIX_smtp_sasl_mechanism_filter: "plain, login"
+        secrets:
+          - name: password
+            env_var: RELAYHOST_PASSWORD_FILE
+      generic:
+        environment:
+          RELAYHOST: "?relayhost"
+          RELAYHOST_USERNAME: "?username"
+          POSTFIX_smtp_tls_security_level: encrypt
+        secrets:
+          - name: password
+            env_var: RELAYHOST_PASSWORD_FILE
+
+header_comment: |
+  Postfix relay-only mail forwarder (boky/postfix) — forwards mail from
+  trusted internal networks to an upstream relay. No volumes: fully
+  stateless, nothing to back up. Never add a `ports:` block here.
+
+  Needs a `provider` extension (ovh/generic) picked by whoever deploys
+  this — RELAYHOST/username/password and the TLS/SASL settings all live
+  per-variant, not here, so each provider gets its own env var/secret
+  naming (ovh_password vs generic_password).
+
+  No stack spec: nothing else in this repo depends on it, so it attaches
+  to a pre-existing external network by hand in `example_app/postfix/`
+  instead of this repo's per-stack `backend` network.

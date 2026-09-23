@@ -1,0 +1,18 @@
+# Auto-generated from templates/specs/services/postfix.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  postfix:
+    environment:
+      RELAYHOST: ${OVH_RELAYHOST:?OVH_RELAYHOST is required}
+      RELAYHOST_USERNAME: ${OVH_USERNAME:?OVH_USERNAME is required}
+      POSTFIX_smtp_tls_security_level: encrypt
+      POSTFIX_smtp_sasl_mechanism_filter: plain, login
+      RELAYHOST_PASSWORD_FILE: /run/secrets/ovh_password
+
+    secrets:
+      - ovh_password
+
+secrets:
+  ovh_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/ovh_password
