@@ -23,6 +23,6 @@ services:
     labels:
       - homepage.group=${COMPOSE_PROJECT_NAME}
       - homepage.name=Squid
-      - homepage.icon=squid.png
+      - homepage.icon=https://www.squid-cache.org/Images/SN.png
       - homepage.description=Forward/caching HTTP proxy
 

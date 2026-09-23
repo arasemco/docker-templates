@@ -38,6 +38,6 @@ services:
     labels:
       - homepage.group=${COMPOSE_PROJECT_NAME}
       - homepage.name=Docker Socket Proxy
-      - homepage.icon=docker-socket-proxy.png
+      - homepage.icon=https://www.docker.com/app/uploads/2024/02/cropped-docker-logo-favicon-192x192.png
       - homepage.description=Scoped read-only proxy for the Docker API
 

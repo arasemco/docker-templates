@@ -14,8 +14,14 @@ extra:
 labels:
   homepage.:
     description: "Forward/caching HTTP proxy"
+    icon: https://www.squid-cache.org/Images/SN.png
 
 header_comment: |
   Squid — forward/caching HTTP proxy.
   Config (squid.conf/conf.d/lists) and ports are deployment-specific —
   bind-mount and publish them in the consuming docker-compose.yml.
+
+  icon overrides the label default (`squid.png`, which doesn't exist in
+  dashboard-icons — only the unrelated "squidex" CMS does) with Squid's
+  own logo, served directly from squid-cache.org/Images/ itself (not a
+  third-party mirror).

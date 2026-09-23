@@ -21,6 +21,7 @@ mem_default: "256M"
 labels:
   homepage.:
     description: "Scoped read-only proxy for the Docker API"
+    icon: https://www.docker.com/app/uploads/2024/02/cropped-docker-logo-favicon-192x192.png
 
 extra:
   profiles:
@@ -57,3 +58,12 @@ header_comment: |
   blocked response proves a flag is required; test against the specific
   endpoint a consumer actually calls. Never used standalone — wired in
   alongside homepage via tools/specs/stacks/homepage.yaml.
+
+  icon overrides the label default (`docker-socket-proxy.png`, which
+  doesn't exist in dashboard-icons) with Docker's own logo instead —
+  checked the Tecnativa/docker-socket-proxy repo itself (root, README,
+  .github/) and it ships no logo of its own, only shields.io badges, so
+  there's no project-specific asset to point at. Docker's logo is still
+  the accurate choice, not a generic placeholder: this proxies the Docker
+  API specifically. Served straight from docker.com's own favicon asset,
+  not a third-party mirror.
