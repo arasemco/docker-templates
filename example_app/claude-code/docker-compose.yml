@@ -33,5 +33,6 @@ services:
     hostname: claude-code
     restart: "no"
 
-    volumes:
-      - path/to/some/projects/:path/to/some/projects/
+    # Mount your own project directories here before running, e.g.:
+    # volumes:
+    #   - /path/to/some/projects/:/path/to/some/projects/
