@@ -1,5 +1,6 @@
 """Scaffold a services/base/<name>/ docker-compose bundle, or a
-stacks/docker-compose.<app>-<dep>.yml file, from a minimal YAML spec.
+stacks/docker-compose.<app>-<dep>.yml file, from a minimal YAML spec —
+or, with `app`, interactively create a deployable app from them.
 
 See tools/README.md for the annotated schema, and specs/services/*.yaml /
 specs/stacks/*.yaml for real examples.
@@ -145,17 +146,19 @@ def scaffold_service(
     )
 
 
-def scaffold_stack(d: dict, *, source: str, force: bool = False, dry_run: bool = False) -> None:
-    content = render_stack(**resolve_stack_spec(d))
+def stack_filename(d: dict) -> str:
+    """Output filename for a stack spec: docker-compose.<app>-<deps>.yml."""
     deps = d["dep"] if isinstance(d["dep"], list) else [d["dep"]]
     app_slug = d.get("app_slug", d["app"])
     dep_slug = d.get("dep_slug", "-".join(deps))
-    filename = (
-        f"docker-compose.{app_slug}-{dep_slug}.yml"
-        if dep_slug
-        else f"docker-compose.{app_slug}.yml"
-    )
-    out_path = STACKS_DIR / filename
+    if dep_slug:
+        return f"docker-compose.{app_slug}-{dep_slug}.yml"
+    return f"docker-compose.{app_slug}.yml"
+
+
+def scaffold_stack(d: dict, *, source: str, force: bool = False, dry_run: bool = False) -> None:
+    content = render_stack(**resolve_stack_spec(d))
+    out_path = STACKS_DIR / stack_filename(d)
     _emit(out_path, content, source=source, force=force, dry_run=dry_run)
 
     # Not force-gated: this directory-level notice is identical every time
@@ -249,10 +252,47 @@ def main(argv=None) -> int:
         "--dry-run", action="store_true", help="print the generated file instead of writing it"
     )
 
+    app_p = sub.add_parser(
+        "app", help="interactively create a deployable app from a stack or service"
+    )
+    app_p.add_argument(
+        "--stacks-dir",
+        type=Path,
+        default=Path.home() / "stacks",
+        help="where the app directory is created (default: ~/stacks)",
+    )
+    app_p.add_argument(
+        "--secrets-dir",
+        type=Path,
+        default=Path.home() / "secrets",
+        help="secrets root holding env/<app>/.env and secret files (default: ~/secrets)",
+    )
+    app_p.add_argument(
+        "--dry-run", action="store_true", help="print the files instead of writing them"
+    )
+
     args = parser.parse_args(argv)
 
     if args.command is None:
         return scaffold_all(force=args.force, dry_run=args.dry_run)
+
+    if args.command == "app":
+        from .app import run_app
+        from .prompts import Aborted, Prompter
+
+        try:
+            return run_app(
+                Prompter(),
+                stacks_root=args.stacks_dir.expanduser().resolve(),
+                secrets_root=args.secrets_dir.expanduser().resolve(),
+                dry_run=args.dry_run,
+            )
+        except (Aborted, KeyboardInterrupt):
+            print("\naborted, nothing written", file=sys.stderr)
+            return 1
+        except (FileExistsError, ValueError) as e:
+            print(f"error: {e}", file=sys.stderr)
+            return 1
 
     if not args.spec.exists():
         parser.error(f"spec file not found: {args.spec}")

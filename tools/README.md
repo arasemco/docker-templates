@@ -147,6 +147,75 @@ uv run python -m docker_templates_tools --dry-run   # preview every spec's outpu
 uv run python -m docker_templates_tools --force     # regenerate everything
 ```
 
+### Creating an app
+
+`app` turns a stack or service into a deployable app directory,
+interactively:
+
+```sh
+cd tools
+uv run python -m docker_templates_tools app              # ~/stacks, ~/secrets
+uv run python -m docker_templates_tools app --dry-run    # print, write nothing
+uv run python -m docker_templates_tools app --stacks-dir DIR --secrets-dir DIR
+```
+
+1. **Pick** a stack or a service. For a service, each grouped extension
+   (`database`, `mailer`, ...) is offered as a choice or `none`; a variant
+   that is itself a service (postgres, mariadb, redis) becomes a
+   dependency.
+2. **Resolve** the choice: an existing stack with the same app,
+   dependencies and extensions is reused; a service with dependencies no
+   stack covers gets a new `templates/specs/stacks/<app>-<deps>.yaml`,
+   generated like any other stack; a service with no dependencies
+   includes its own `templates/services/base/<name>/` files directly.
+3. **Variables**: every `${VAR}` the included compose files reference
+   (walking the whole include tree) is asked for, shared ones first, then
+   grouped per service. Required ones need a value; optional ones keep
+   their default on Enter. Restart/pull policy and CPU/memory limits are
+   only asked after "Customize advanced settings?". A value already set
+   in one of the app's env files (below) is shown and confirmed one by
+   one.
+4. **Secrets**: each secret file gets a generated 32-character value to
+   accept or replace; an existing secret file is confirmed one by one.
+
+Nothing is written until a final "Write these files?". Output:
+
+- `<stacks>/<app>/docker-compose.yml` — `include:` of the stack (or the
+  service's files) with the env files that feed it, plus an optional
+  external network (default `domain_reverse-proxy`, `-` for none) for the
+  app's main service. An existing file is shown and only replaced after
+  confirmation.
+- `<stacks>/<app>/Makefile` — `include ../common.mk`, when `common.mk`
+  exists and there's no Makefile yet.
+- The env files the include lists, each created if missing (Compose
+  errors on a missing one); existing keys are updated in place, comments
+  kept, mode 600.
+- Secret files at the paths the compose files point at, mode 600.
+
+The include carries its own `env_file:` list, so a plain `docker compose`
+in the app directory resolves every variable — no `--env-file` flags or
+Make wrapper needed:
+
+```yaml
+include:
+  - path: ../000-templates/templates/stacks/docker-compose.gitea-mariadb.yml
+    env_file:
+      - ${HOME}/secrets/env/000-generic/.env       # shared by every app
+      - ${HOME}/secrets/env/000-generic/smtp/.env  # shared, because gitea uses smtp
+      - ${HOME}/secrets/env/gitea/.env             # gitea's own values, last so they win
+```
+
+Later files win; a shell variable or a CLI `--env-file` still overrides
+all of them. Each value goes to the file it belongs in: `SECRETS_DIR` to
+`000-generic/.env`, a shared extension group's variables (`SMTP_*`, see
+`shared` under the service spec schema) to `000-generic/<group>/.env`,
+everything else to the app's own file. These values only feed the
+included templates' `${VAR}`s, not variables used in the app's own
+compose file.
+
+A generated stack doesn't wire `custom: true` companions (`-cli`/`-init`,
+cron) — those need `extra_services` entries in the stack spec by hand.
+
 ### Running the tests
 
 ```sh
@@ -213,7 +282,7 @@ keeps a service's own file reusable outside any particular stack.
 | `labels` | `{}` | a flat/nested map, same rules as `environment` (including the `?`/`-` value shorthand) — see the "Labels" section above |
 | `dir_prefix` | — | overrides the output directory + restore-script/anchor naming only (not the compose service key/hostname/env-var naming) — for a service whose image's last path segment doesn't match its real name (nginx-proxy-manager's service is `npm`, its directory is `nginx-proxy-manager`) |
 | `header_comment` | — | a plain multi-line string (no `#` prefixes) rendered as a leading comment block on `docker-compose.yml`, right after the auto-generated-file notice — a one-glance summary of what the service is and any non-obvious fact (e.g. that a database/smtp extension is required, or that it's never used standalone) |
-| `extensions` | `{}` | a map: `<group-key>: {...}`. If the value has a `variants:` map, each variant key becomes its own file under `templates/services/base/<name>/<group-key>/docker-compose.<variant>.yml`, and each variant's naming prefix is its own key (gitea's `database` group: `mariadb`/`mysql`/`sqlite3`). If the value has `environment`/`secrets` directly (no `variants:`), it's a single flat `docker-compose.<group-key>.yml` sibling file (gitea's `smtp`), prefixed by the group key itself. Either shape supports the same `environment`/`secrets` fields as the main spec (minus volumes/healthcheck/etc — an extension only ever adds environment and secrets to the main service). |
+| `extensions` | `{}` | a map: `<group-key>: {...}`. If the value has a `variants:` map, each variant key becomes its own file under `templates/services/base/<name>/<group-key>/docker-compose.<variant>.yml`, and each variant's naming prefix is its own key (gitea's `database` group: `mariadb`/`mysql`/`sqlite3`). If the value has `environment`/`secrets` directly (no `variants:`), it's a single flat `docker-compose.<group-key>.yml` sibling file (gitea's `smtp`), prefixed by the group key itself. Either shape supports the same `environment`/`secrets` fields as the main spec (minus volumes/healthcheck/etc — an extension only ever adds environment and secrets to the main service). A variant (or flat extension) with `shared: true` is shared by every stack: its secrets live under `env/000-generic/<key>/` (same as a per-secret `shared: true`), and `app` writes its variables to `env/000-generic/<key>/.env` and lists that file in the app's `env_file:` — see the smtp mailer variants. |
 
 ### Stack spec schema
 
