@@ -1,0 +1,25 @@
+# Auto-generated from templates/specs/services/postgres.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+include:
+  - ../../custom/backup/docker-compose.yml
+
+x-volumes: &postgres-volumes
+  volumes:
+    - postgres_data:/mnt/postgres
+
+services:
+  backup: *postgres-volumes
+  restore:
+    <<: *postgres-volumes
+    configs:
+      - source: postgres_restore_00_owner
+        target: /srv/configs/restore.d/00-postgres-owner.sh
+
+configs:
+  postgres_restore_00_owner:
+    content: |
+      set -e
+      chown -R 999:999 /mnt/postgres
+      find /mnt/postgres -type d -exec chmod 700 {} +
+      find /mnt/postgres -type f -exec chmod 600 {} +

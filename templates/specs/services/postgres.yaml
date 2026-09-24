@@ -1,0 +1,46 @@
+image: postgres
+description: database
+tag_required: true
+
+display:
+  name: PostgreSQL
+
+environment:
+  POSTGRES_DB: "?name"
+  POSTGRES_USER: "?user"
+  PGDATA: /var/lib/postgresql/data
+
+secrets:
+  - name: password
+    env_var: POSTGRES_PASSWORD_FILE
+
+volumes:
+  data:
+    path: /var/lib/postgresql/data
+    backup: true
+    owner:
+      uid: 999
+      gid: 999
+
+healthcheck:
+  test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+
+cpu_default: "1.0"
+mem_default: "1G"
+
+extra:
+  profiles:
+    - ""
+    - postgres
+    - database
+    - db
+
+labels:
+  homepage.:
+    description: "Relational database for ${COMPOSE_PROJECT_NAME}"
+
+header_comment: |
+  PostgreSQL — relational database server.
+  POSTGRES_USER is the cluster superuser and owns POSTGRES_DB; one
+  `password` secret per stack. PGDATA is pinned to the pre-18 path so the
+  same volume layout works across major versions (18+ moved the default).

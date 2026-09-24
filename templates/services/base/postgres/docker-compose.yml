@@ -1,0 +1,12 @@
+# Auto-generated from templates/specs/services/postgres.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+# PostgreSQL — relational database server.
+# POSTGRES_USER is the cluster superuser and owns POSTGRES_DB; one
+# `password` secret per stack. PGDATA is pinned to the pre-18 path so the
+# same volume layout works across major versions (18+ moved the default).
+
+include:
+  - docker-compose.backup.yml
+  - docker-compose.base.yml
+

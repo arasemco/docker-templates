@@ -1,0 +1,59 @@
+# Auto-generated from templates/specs/services/postgres.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  postgres:
+    image: postgres:${POSTGRES_TAG:?POSTGRES_TAG is required}
+    hostname: postgres.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: ${RESTART:-unless-stopped}
+    pull_policy: ${PULL_POLICY:-missing}
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_NAME:?POSTGRES_NAME is required}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      PGDATA: /var/lib/postgresql/data
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+
+    secrets:
+      - postgres_password
+
+    volumes:
+      - type: volume
+        source: postgres_data
+        target: /var/lib/postgresql/data
+        read_only: false
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${POSTGRES_CPU_LIMIT:-1.0}"
+          memory: ${POSTGRES_MEM_LIMIT:-1G}
+
+    profiles:
+      - ''
+      - postgres
+      - database
+      - db
+
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=PostgreSQL
+      - homepage.icon=postgres.png
+      - homepage.description=Relational database for ${COMPOSE_PROJECT_NAME}
+
+secrets:
+  postgres_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/postgres_password
+
+volumes:
+  postgres_data:
+    labels:
+      - pro.asemo.description=PostgreSQL data directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=postgres
