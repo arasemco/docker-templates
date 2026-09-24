@@ -5,7 +5,7 @@ extensions:
   database: mariadb
   mailer: smtp
 
-custom: true
+custom: false
 
 app_extra:
   profiles:
@@ -14,12 +14,6 @@ app_extra:
 dep_extra:
   profiles:
     - backend
-
-extra_services:
-  - passbolt-cli
-  - name: passbolt-init
-    networks: []
-    extends: passbolt-cli
 
 header_comment: |
   Composed template: Passbolt + MariaDB.

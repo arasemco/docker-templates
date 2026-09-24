@@ -16,7 +16,6 @@ include:
       - ../services/base/passbolt/docker-compose.yml
       - ../services/base/passbolt/database/docker-compose.mariadb.yml
       - ../services/base/passbolt/mailer/docker-compose.smtp.yml
-      - ../services/custom/passbolt/docker-compose.custom.yml
   - ../services/base/mariadb/docker-compose.yml
 
 services:
@@ -29,14 +28,6 @@ services:
       mariadb:
         condition: service_healthy
         restart: true
-
-  passbolt-cli:
-    networks:
-      - backend
-
-  passbolt-init:
-    extends:
-      service: passbolt-cli
 
   mariadb:
     profiles:
