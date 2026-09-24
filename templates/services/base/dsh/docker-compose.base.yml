@@ -16,6 +16,18 @@ services:
         source: dsh_home
         target: /home/dsh/.dsh
         read_only: false
+      - type: volume
+        source: dsh_ssh
+        target: /home/dsh/.ssh
+        read_only: false
+      - type: volume
+        source: dsh_config
+        target: /home/dsh/.config
+        read_only: false
+      - type: volume
+        source: dsh_docker
+        target: /home/dsh/.local/share/docker
+        read_only: false
 
     deploy:
       resources:
@@ -24,6 +36,13 @@ services:
           memory: ${DSH_MEM_LIMIT:-8G}
 
     init: true
+    runtime: runc
+    security_opt:
+      - seccomp:unconfined
+      - systempaths=unconfined
+    devices:
+      - /dev/fuse
+      - /dev/net/tun
 
     labels:
       - homepage.group=${COMPOSE_PROJECT_NAME}
@@ -37,4 +56,16 @@ volumes:
   dsh_home:
     labels:
       - pro.asemo.description=DeepSeek Harness home directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=dsh
+  dsh_ssh:
+    labels:
+      - pro.asemo.description=DeepSeek Harness ssh directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=dsh
+  dsh_config:
+    labels:
+      - pro.asemo.description=DeepSeek Harness config directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=dsh
+  dsh_docker:
+    labels:
+      - pro.asemo.description=DeepSeek Harness docker directory for ${COMPOSE_PROJECT_NAME}
       - pro.asemo.service=dsh

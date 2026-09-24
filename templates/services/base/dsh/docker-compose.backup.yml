@@ -7,6 +7,8 @@ include:
 x-volumes: &dsh-volumes
   volumes:
     - dsh_home:/mnt/home/dsh/.dsh
+    - dsh_ssh:/mnt/home/dsh/.ssh
+    - dsh_config:/mnt/home/dsh/.config
 
 services:
   backup: *dsh-volumes
@@ -23,3 +25,11 @@ configs:
       chown -R 1000:1000 /mnt/home/dsh/.dsh
       find /mnt/home/dsh/.dsh -type d -exec chmod 700 {} +
       find /mnt/home/dsh/.dsh -type f -exec chmod 600 {} +
+
+      chown -R 1000:1000 /mnt/home/dsh/.ssh
+      find /mnt/home/dsh/.ssh -type d -exec chmod 700 {} +
+      find /mnt/home/dsh/.ssh -type f -exec chmod 600 {} +
+
+      chown -R 1000:1000 /mnt/home/dsh/.config
+      find /mnt/home/dsh/.config -type d -exec chmod 700 {} +
+      find /mnt/home/dsh/.config -type f -exec chmod 600 {} +

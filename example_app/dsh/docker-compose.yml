@@ -25,4 +25,4 @@ services:
     # The project directory dsh operates on — whatever you'd otherwise
     # `cd` into before running `dsh web` on the host.
     volumes:
-      - ./workspace:/workspace
+      - ./workspace:/home/dsh/workspace
