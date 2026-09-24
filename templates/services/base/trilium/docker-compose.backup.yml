@@ -1,0 +1,25 @@
+# Auto-generated from templates/specs/services/trilium.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+include:
+  - ../../custom/backup/docker-compose.yml
+
+x-volumes: &trilium-volumes
+  volumes:
+    - trilium_data:/mnt/trilium
+
+services:
+  backup: *trilium-volumes
+  restore:
+    <<: *trilium-volumes
+    configs:
+      - source: trilium_restore_00_owner
+        target: /srv/configs/restore.d/00-trilium-owner.sh
+
+configs:
+  trilium_restore_00_owner:
+    content: |
+      set -e
+      chown -R 1000:1000 /mnt/trilium
+      find /mnt/trilium -type d -exec chmod 700 {} +
+      find /mnt/trilium -type f -exec chmod 600 {} +

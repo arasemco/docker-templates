@@ -1,0 +1,14 @@
+# Auto-generated from templates/specs/services/trilium.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+# Trilium Notes (TriliumNext) — hierarchical personal knowledge base.
+# Everything lives in the data volume (SQLite document.db, config.ini,
+# its own backups); config.ini keys can be overridden with
+# TRILIUM_<SECTION>_<KEY> env vars. Trusts one reverse-proxy hop by
+# default (real client IPs in logs). No healthcheck here: the image ships
+# its own, and its script path differs between releases.
+
+include:
+  - docker-compose.backup.yml
+  - docker-compose.base.yml
+

@@ -1,0 +1,47 @@
+# Auto-generated from templates/specs/services/trilium.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  trilium:
+    image: triliumnext/trilium:${TRILIUM_TAG:?TRILIUM_TAG is required}
+    hostname: trilium.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: ${RESTART:-unless-stopped}
+    pull_policy: ${PULL_POLICY:-missing}
+
+    environment:
+      TRILIUM_NETWORK_TRUSTEDREVERSEPROXY: ${TRILIUM_TRUSTED_REVERSE_PROXY:-1}
+
+    volumes:
+      - type: volume
+        source: trilium_data
+        target: /home/node/trilium-data
+        read_only: false
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${TRILIUM_CPU_LIMIT:-1.0}"
+          memory: ${TRILIUM_MEM_LIMIT:-512M}
+
+    profiles:
+      - ''
+      - trilium
+      - notes
+
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=Trilium Notes
+      - homepage.icon=trilium.png
+      - homepage.description=Personal knowledge base for ${COMPOSE_PROJECT_NAME}
+      - homepage.ping=https://${STACK_DOMAIN}
+      - homepage.href=https://${STACK_DOMAIN}
+      - homepage.widget.type=trilium
+      - homepage.widget.url=http://trilium:8080
+      - homepage.widget.key=${TRILIUM_HOMEPAGE_KEY}
+      - homepage.widget.fields=["version", "notesCount", "dbSize"]
+
+volumes:
+  trilium_data:
+    labels:
+      - pro.asemo.description=Trilium Notes data directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=trilium

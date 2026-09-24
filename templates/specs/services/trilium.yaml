@@ -1,0 +1,44 @@
+image: triliumnext/trilium
+description: personal knowledge base
+tag_required: true
+
+display:
+  name: Trilium Notes
+
+environment:
+  TRILIUM_NETWORK_TRUSTEDREVERSEPROXY: "-trusted_reverse_proxy:1"
+
+volumes:
+  data:
+    path: /home/node/trilium-data
+    backup: true
+    owner:
+      uid: 1000
+      gid: 1000
+
+cpu_default: "1.0"
+mem_default: "512M"
+
+extra:
+  profiles:
+    - ""
+    - trilium
+    - notes
+
+labels:
+  homepage.:
+    ping: "https://${STACK_DOMAIN}"
+    href: "https://${STACK_DOMAIN}"
+    widget.:
+      type: trilium
+      url: "http://trilium:8080"
+      key: "${TRILIUM_HOMEPAGE_KEY}"
+      fields: '["version", "notesCount", "dbSize"]'
+
+header_comment: |
+  Trilium Notes (TriliumNext) — hierarchical personal knowledge base.
+  Everything lives in the data volume (SQLite document.db, config.ini,
+  its own backups); config.ini keys can be overridden with
+  TRILIUM_<SECTION>_<KEY> env vars. Trusts one reverse-proxy hop by
+  default (real client IPs in logs). No healthcheck here: the image ships
+  its own, and its script path differs between releases.
