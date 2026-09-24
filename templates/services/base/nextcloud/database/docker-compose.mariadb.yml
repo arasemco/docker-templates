@@ -1,0 +1,17 @@
+# Auto-generated from templates/specs/services/nextcloud.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  nextcloud:
+    environment:
+      MYSQL_HOST: ${MARIADB_HOST:-mariadb}
+      MYSQL_DATABASE: ${MARIADB_NAME:?MARIADB_NAME is required}
+      MYSQL_USER: ${MARIADB_USER:?MARIADB_USER is required}
+      MYSQL_PASSWORD_FILE: /run/secrets/mariadb_password
+
+    secrets:
+      - mariadb_password
+
+secrets:
+  mariadb_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/mariadb_password

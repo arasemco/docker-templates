@@ -1,0 +1,78 @@
+# Auto-generated from templates/specs/services/nextcloud.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  nextcloud:
+    image: nextcloud:${NEXTCLOUD_TAG:?NEXTCLOUD_TAG is required}
+    hostname: nextcloud.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: ${RESTART:-unless-stopped}
+    pull_policy: ${PULL_POLICY:-missing}
+
+    environment:
+      NEXTCLOUD_TRUSTED_DOMAINS: ${STACK_DOMAIN}
+      OVERWRITEPROTOCOL: ${NEXTCLOUD_OVERWRITEPROTOCOL:-https}
+      OVERWRITECLIURL: https://${STACK_DOMAIN}
+
+    configs:
+      - source: nextcloud_php_uploads
+        target: /usr/local/etc/php/conf.d/uploads.ini
+
+    volumes:
+      - type: volume
+        source: nextcloud_html
+        target: /var/www/html
+        read_only: false
+      - type: volume
+        source: nextcloud_data
+        target: /var/www/html/data
+        read_only: false
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost/status.php | grep -q '\"installed\":true'"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${NEXTCLOUD_CPU_LIMIT:-2.0}"
+          memory: ${NEXTCLOUD_MEM_LIMIT:-2G}
+
+    profiles:
+      - ''
+      - nextcloud
+      - cloud
+
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=Nextcloud
+      - homepage.icon=nextcloud.png
+      - homepage.description=Self-hosted file sync and share
+      - homepage.ping=https://${STACK_DOMAIN}
+      - homepage.href=https://${STACK_DOMAIN}
+      - homepage.widget.type=nextcloud
+      - homepage.widget.url=https://${STACK_DOMAIN}
+      - homepage.widget.key=${NEXTCLOUD_HOMEPAGE_TOKEN:-}
+      - homepage.widget.fields=["freespace", "activeusers", "numfiles", "numshares"]
+
+configs:
+  nextcloud_php_uploads:
+    content: |
+      upload_max_filesize = ${NEXTCLOUD_UPLOAD_MAX:-20G}
+      post_max_size = ${NEXTCLOUD_UPLOAD_MAX:-20G}
+      memory_limit = ${NEXTCLOUD_PHP_MEMORY:-1G}
+      max_execution_time = 3600
+      max_input_time = 3600
+      output_buffering = Off
+
+volumes:
+  nextcloud_html:
+    labels:
+      - pro.asemo.description=Nextcloud html directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=nextcloud
+  nextcloud_data:
+    labels:
+      - pro.asemo.description=Nextcloud data directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=nextcloud

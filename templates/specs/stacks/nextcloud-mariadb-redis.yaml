@@ -1,0 +1,32 @@
+app: nextcloud
+dep:
+  - mariadb
+  - redis
+
+extensions:
+  database: mariadb
+  cache: redis
+  mailer: smtp
+
+custom: true
+
+app_extra:
+  profiles:
+    - frontend
+
+dep_extra:
+  profiles:
+    - backend
+
+extra_services:
+  - name: nextcloud-cron
+    depends_on: nextcloud
+
+header_comment: |
+  Composed template: Nextcloud + MariaDB + Redis.
+  Wires base/nextcloud, base/mariadb and base/redis together on shared
+  networks with a health-gated startup order, selects nextcloud's redis
+  cache and smtp mailer variants, and adds nextcloud-cron for background
+  jobs (set `occ background:cron` once after install). Include this single
+  file from a stack's docker-compose.yml; it needs no other includes
+  alongside it.

@@ -1,0 +1,99 @@
+image: nextcloud
+tag_required: true
+
+environment:
+  NEXTCLOUD_TRUSTED_DOMAINS: "${STACK_DOMAIN}"
+  OVERWRITEPROTOCOL: "-overwriteprotocol:https"
+  OVERWRITECLIURL: "https://${STACK_DOMAIN}"
+
+configs:
+  - name: php_uploads
+    target: /usr/local/etc/php/conf.d/uploads.ini
+    content: |
+      upload_max_filesize = ${NEXTCLOUD_UPLOAD_MAX:-20G}
+      post_max_size = ${NEXTCLOUD_UPLOAD_MAX:-20G}
+      memory_limit = ${NEXTCLOUD_PHP_MEMORY:-1G}
+      max_execution_time = 3600
+      max_input_time = 3600
+      output_buffering = Off
+
+volumes:
+  html:
+    path: /var/www/html
+    backup: true
+    owner:
+      uid: 33
+      gid: 33
+    mod:
+      dirs: 750
+      files: 640
+  data:
+    path: /var/www/html/data
+
+healthcheck:
+  test: ["CMD-SHELL", "curl -fsS http://localhost/status.php | grep -q '\"installed\":true'"]
+  start_period: 120s
+
+cpu_default: "2.0"
+mem_default: "2G"
+
+extra:
+  profiles:
+    - ""
+    - nextcloud
+    - cloud
+
+labels:
+  homepage.:
+    description: "Self-hosted file sync and share"
+    ping: "https://${STACK_DOMAIN}"
+    href: "https://${STACK_DOMAIN}"
+    widget.:
+      type: nextcloud
+      url: "https://${STACK_DOMAIN}"
+      key: "${NEXTCLOUD_HOMEPAGE_TOKEN:-}"
+      fields: '["freespace", "activeusers", "numfiles", "numshares"]'
+
+extensions:
+  database:
+    variants:
+      mariadb:
+        environment:
+          MYSQL_HOST: "-host:mariadb"
+          MYSQL_DATABASE: "?name"
+          MYSQL_USER: "?user"
+        secrets:
+          - name: password
+            env_var: MYSQL_PASSWORD_FILE
+
+  cache:
+    variants:
+      redis:
+        environment:
+          REDIS_HOST: "-host:redis"
+        secrets:
+          - name: password
+            env_var: REDIS_HOST_PASSWORD_FILE
+
+  mailer:
+    variants:
+      smtp:
+        environment:
+          SMTP_HOST: "?host"
+          SMTP_PORT: "-port:587"
+          SMTP_SECURE: "-secure:tls"
+          SMTP_AUTHTYPE: "-authtype:LOGIN"
+          SMTP_NAME: "${SMTP_USERNAME}"
+          MAIL_FROM_ADDRESS: "?from"
+          MAIL_DOMAIN: "?domain"
+        secrets:
+          - name: password
+            env_var: SMTP_PASSWORD_FILE
+            shared: true
+
+header_comment: |
+  Nextcloud — self-hosted file sync and share (apache image, runs as www-data/33).
+  Needs the mariadb database extension picked by the consuming stack; redis
+  cache and smtp mailer are optional add-ons. Only the app volume (html) is
+  backed up — the user data volume is expected to be overridden with a bind
+  mount to bulk storage and backed up separately.

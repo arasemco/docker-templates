@@ -1,0 +1,18 @@
+services:
+  nextcloud-cron:
+    extends:
+      file: ../../base/nextcloud/docker-compose.base.yml
+      service: nextcloud
+    profiles:
+      - ""
+      - nextcloud-cron
+      - cron
+    hostname: nextcloud-cron.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    entrypoint: /cron.sh
+    healthcheck:
+      disable: true
+    labels: !override
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=Nextcloud Cron
+      - homepage.icon=mdi-calendar-clock
+      - homepage.description=Background jobs for ${COMPOSE_PROJECT_NAME}

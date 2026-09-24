@@ -1,0 +1,21 @@
+# Auto-generated from templates/specs/services/nextcloud.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  nextcloud:
+    environment:
+      SMTP_HOST: ${SMTP_HOST:?SMTP_HOST is required}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-tls}
+      SMTP_AUTHTYPE: ${SMTP_AUTHTYPE:-LOGIN}
+      SMTP_NAME: ${SMTP_USERNAME}
+      MAIL_FROM_ADDRESS: ${SMTP_FROM:?SMTP_FROM is required}
+      MAIL_DOMAIN: ${SMTP_DOMAIN:?SMTP_DOMAIN is required}
+      SMTP_PASSWORD_FILE: /run/secrets/smtp_password
+
+    secrets:
+      - smtp_password
+
+secrets:
+  smtp_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/000-generic/smtp/password

@@ -1,0 +1,25 @@
+# Auto-generated from templates/specs/services/nextcloud.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+include:
+  - ../../custom/backup/docker-compose.yml
+
+x-volumes: &nextcloud-volumes
+  volumes:
+    - nextcloud_html:/mnt/var/www/html
+
+services:
+  backup: *nextcloud-volumes
+  restore:
+    <<: *nextcloud-volumes
+    configs:
+      - source: nextcloud_restore_00_owner
+        target: /srv/configs/restore.d/00-nextcloud-owner.sh
+
+configs:
+  nextcloud_restore_00_owner:
+    content: |
+      set -e
+      chown -R 33:33 /mnt/var/www/html
+      find /mnt/var/www/html -type d -exec chmod 750 {} +
+      find /mnt/var/www/html -type f -exec chmod 640 {} +

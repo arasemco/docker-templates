@@ -1,0 +1,58 @@
+# Auto-generated from templates/specs/stacks/nextcloud-mariadb-redis.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+# Composed template: Nextcloud + MariaDB + Redis.
+# Wires base/nextcloud, base/mariadb and base/redis together on shared
+# networks with a health-gated startup order, selects nextcloud's redis
+# cache and smtp mailer variants, and adds nextcloud-cron for background
+# jobs (set `occ background:cron` once after install). Include this single
+# file from a stack's docker-compose.yml; it needs no other includes
+# alongside it.
+
+include:
+  - path:
+      - ../services/base/nextcloud/docker-compose.yml
+      - ../services/base/nextcloud/database/docker-compose.mariadb.yml
+      - ../services/base/nextcloud/cache/docker-compose.redis.yml
+      - ../services/base/nextcloud/mailer/docker-compose.smtp.yml
+      - ../services/custom/nextcloud/docker-compose.custom.yml
+  - ../services/base/mariadb/docker-compose.yml
+  - ../services/base/redis/docker-compose.yml
+
+services:
+  nextcloud:
+    profiles:
+      - frontend
+    networks:
+      - backend
+    depends_on:
+      mariadb:
+        condition: service_healthy
+        restart: true
+      redis:
+        condition: service_healthy
+        restart: true
+
+  nextcloud-cron:
+    networks:
+      - backend
+    depends_on:
+      nextcloud:
+        condition: service_healthy
+        restart: true
+
+  mariadb:
+    profiles:
+      - backend
+    networks:
+      - backend
+
+  redis:
+    profiles:
+      - backend
+    networks:
+      - backend
+
+networks:
+  backend:
+    internal: true

@@ -1,0 +1,15 @@
+# Auto-generated from templates/specs/services/nextcloud.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  nextcloud:
+    environment:
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_HOST_PASSWORD_FILE: /run/secrets/redis_password
+
+    secrets:
+      - redis_password
+
+secrets:
+  redis_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/redis_password
