@@ -263,6 +263,23 @@ def _stack_spec_source(d: dict) -> str:
 # --------------------------------------------------------------------------
 
 
+class _ComposeLoader(yaml.SafeLoader):
+    """SafeLoader that also reads Compose's merge tags (`!reset`,
+    `!override`) as the plain value they wrap."""
+
+
+def _construct_tagged(loader, node):
+    if isinstance(node, yaml.MappingNode):
+        return loader.construct_mapping(node, deep=True)
+    if isinstance(node, yaml.SequenceNode):
+        return loader.construct_sequence(node, deep=True)
+    return loader.construct_scalar(node)
+
+
+for _tag in ("!reset", "!override"):
+    _ComposeLoader.add_constructor(_tag, _construct_tagged)
+
+
 def _strings(node):
     if isinstance(node, str):
         yield node
@@ -300,7 +317,7 @@ def collect(includes: list[Path], virtual: dict | None = None) -> tuple[dict, di
         text = virtual.get(path)
         if text is None:
             text = path.read_text()
-        data = yaml.safe_load(text) or {}
+        data = yaml.load(text, Loader=_ComposeLoader) or {}
         for s in _strings({k: v for k, v in data.items() if k != "include"}):
             for ref in find_vars(s):
                 known = variables.get(ref.name)

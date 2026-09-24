@@ -464,3 +464,11 @@ def test_shared_groups_follow_chosen_variants():
     services = load_services()
     assert app.shared_groups(services, "passbolt", ["mariadb"], {"mailer": "smtp"}) == ["smtp"]
     assert app.shared_groups(services, "passbolt", ["mariadb"], {}) == []
+
+
+def test_collect_reads_compose_merge_tags():
+    variables, secrets = collect(
+        [scaffold.STACKS_DIR / "docker-compose.nextcloud-mariadb-redis.yml"]
+    )
+    assert variables["SMTP_HOST"].required
+    assert "mariadb_password" in secrets
