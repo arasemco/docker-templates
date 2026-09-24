@@ -1,0 +1,19 @@
+# Auto-generated from templates/specs/services/metabase.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  metabase:
+    environment:
+      MB_DB_TYPE: mysql
+      MB_DB_HOST: ${MARIADB_HOST:-mariadb}
+      MB_DB_PORT: ${MARIADB_PORT:-3306}
+      MB_DB_DBNAME: ${MARIADB_NAME:?MARIADB_NAME is required}
+      MB_DB_USER: ${MARIADB_USER:?MARIADB_USER is required}
+      MB_DB_PASS_FILE: /run/secrets/mariadb_password
+
+    secrets:
+      - mariadb_password
+
+secrets:
+  mariadb_password:
+    file: ${SECRETS_DIR:?SECRETS_DIR is required}/env/${COMPOSE_PROJECT_NAME}/mariadb_password

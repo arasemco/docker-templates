@@ -1,0 +1,20 @@
+app: metabase
+dep: postgres
+
+extensions:
+  database: postgres
+
+app_extra:
+  profiles:
+    - frontend
+
+dep_extra:
+  profiles:
+    - backend
+
+header_comment: |
+  Composed template: Metabase + PostgreSQL.
+  Wires base/metabase and base/postgres together on shared networks with
+  a health-gated startup order, using postgres as Metabase's application
+  database. Include this single file from a stack's docker-compose.yml;
+  it needs no other includes alongside it.

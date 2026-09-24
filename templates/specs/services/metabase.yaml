@@ -1,0 +1,68 @@
+image: metabase/metabase
+description: business intelligence
+tag_required: true
+
+display:
+  name: Metabase
+
+healthcheck:
+  test: ["CMD-SHELL", "curl -fsS http://localhost:3000/api/health || exit 1"]
+  interval: 15s
+  retries: 5
+  start_period: 180s
+
+cpu_default: "1.0"
+mem_default: "2G"
+
+extra:
+  profiles:
+    - ""
+    - metabase
+    - bi
+
+labels:
+  homepage.:
+    description: "Business intelligence and dashboards"
+    ping: "https://${STACK_DOMAIN}"
+    href: "https://${STACK_DOMAIN}"
+
+extensions:
+  database:
+    variants:
+      postgres:
+        environment:
+          MB_DB_TYPE: postgres
+          MB_DB_HOST: "-host:postgres"
+          MB_DB_PORT: "-port:5432"
+          MB_DB_DBNAME: "?name"
+          MB_DB_USER: "?user"
+        secrets:
+          - name: password
+            env_var: MB_DB_PASS_FILE
+      mariadb:
+        environment:
+          MB_DB_TYPE: mysql
+          MB_DB_HOST: "-host:mariadb"
+          MB_DB_PORT: "-port:3306"
+          MB_DB_DBNAME: "?name"
+          MB_DB_USER: "?user"
+        secrets:
+          - name: password
+            env_var: MB_DB_PASS_FILE
+      mysql:
+        environment:
+          MB_DB_TYPE: mysql
+          MB_DB_HOST: "-host:mysql"
+          MB_DB_PORT: "-port:3306"
+          MB_DB_DBNAME: "?name"
+          MB_DB_USER: "?user"
+        secrets:
+          - name: password
+            env_var: MB_DB_PASS_FILE
+
+header_comment: |
+  Metabase — business intelligence / dashboards over existing databases.
+  Stateless: everything lives in its application database, so a database
+  extension (postgres/mariadb/mysql) is required — without one it falls
+  back to an embedded H2 file inside the container and loses it on
+  recreate. Data sources it queries are configured in the UI.

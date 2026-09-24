@@ -1,0 +1,36 @@
+# Auto-generated from templates/specs/services/metabase.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  metabase:
+    image: metabase/metabase:${METABASE_TAG:?METABASE_TAG is required}
+    hostname: metabase.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: ${RESTART:-unless-stopped}
+    pull_policy: ${PULL_POLICY:-missing}
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3000/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 180s
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${METABASE_CPU_LIMIT:-1.0}"
+          memory: ${METABASE_MEM_LIMIT:-2G}
+
+    profiles:
+      - ''
+      - metabase
+      - bi
+
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=Metabase
+      - homepage.icon=metabase.png
+      - homepage.description=Business intelligence and dashboards
+      - homepage.ping=https://${STACK_DOMAIN}
+      - homepage.href=https://${STACK_DOMAIN}
+

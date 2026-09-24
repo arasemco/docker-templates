@@ -1,0 +1,35 @@
+# Auto-generated from templates/specs/stacks/metabase-postgres.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+# Composed template: Metabase + PostgreSQL.
+# Wires base/metabase and base/postgres together on shared networks with
+# a health-gated startup order, using postgres as Metabase's application
+# database. Include this single file from a stack's docker-compose.yml;
+# it needs no other includes alongside it.
+
+include:
+  - path:
+      - ../services/base/metabase/docker-compose.yml
+      - ../services/base/metabase/database/docker-compose.postgres.yml
+  - ../services/base/postgres/docker-compose.yml
+
+services:
+  metabase:
+    profiles:
+      - frontend
+    networks:
+      - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: true
+
+  postgres:
+    profiles:
+      - backend
+    networks:
+      - backend
+
+networks:
+  backend:
+    internal: true

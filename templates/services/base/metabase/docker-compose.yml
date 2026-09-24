@@ -1,0 +1,12 @@
+# Auto-generated from templates/specs/services/metabase.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+# Metabase — business intelligence / dashboards over existing databases.
+# Stateless: everything lives in its application database, so a database
+# extension (postgres/mariadb/mysql) is required — without one it falls
+# back to an embedded H2 file inside the container and loses it on
+# recreate. Data sources it queries are configured in the UI.
+
+include:
+  - docker-compose.base.yml
+
