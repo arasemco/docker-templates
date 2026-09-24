@@ -1,0 +1,40 @@
+# Auto-generated from templates/specs/services/dsh.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+services:
+  dsh:
+    image: ghcr.io/arasemco/dsh:${DSH_TAG:-latest}
+    hostname: dsh.${STACK_DOMAIN:?STACK_DOMAIN is required}.local
+    restart: ${RESTART:-unless-stopped}
+    pull_policy: ${PULL_POLICY:-missing}
+
+    environment:
+      DSH_PORT: ${DSH_PORT:-3080}
+
+    volumes:
+      - type: volume
+        source: dsh_home
+        target: /home/dsh/.dsh
+        read_only: false
+
+    deploy:
+      resources:
+        limits:
+          cpus: "${DSH_CPU_LIMIT:-4}"
+          memory: ${DSH_MEM_LIMIT:-8G}
+
+    init: true
+
+    labels:
+      - homepage.group=${COMPOSE_PROJECT_NAME}
+      - homepage.name=DeepSeek Harness
+      - homepage.icon=deepseek.svg
+      - homepage.description=DeepSeek coding agent for ${COMPOSE_PROJECT_NAME}
+      - homepage.ping=http://127.0.0.1:3080/
+      - homepage.href=http://127.0.0.1:3080/
+
+volumes:
+  dsh_home:
+    labels:
+      - pro.asemo.description=DeepSeek Harness home directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=dsh

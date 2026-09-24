@@ -1,0 +1,17 @@
+# Auto-generated from templates/specs/services/dsh.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+# DeepSeek Harness (dsh) — DeepSeek coding agent with a web UI, built
+# locally from ~/Projects/docker/deepseek-harness (`bash bake.sh`).
+# Listens on 0.0.0.0:3080 via the `listen` config (a --patch overlay; the
+# --host flag refuses 0.0.0.0) so a reverse proxy can reach it, and trusts
+# STACK_DOMAIN as its /api Host. It runs model-generated commands: keep it
+# behind the proxy with an access list, never publish its port. Sign in
+# once via the ?token= URL in its logs. The image's own healthcheck
+# expects 200 from `/`, which now needs that cookie, so this one accepts
+# 401 too. `home` holds profiles, API credentials and sessions.
+
+include:
+  - docker-compose.backup.yml
+  - docker-compose.base.yml
+

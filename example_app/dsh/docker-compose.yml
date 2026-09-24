@@ -1,0 +1,28 @@
+# Requires a (meaningless-here) STACK_DOMAIN, e.g. via a `.env` file next
+# to this one:
+#   STACK_DOMAIN=local
+# Same reason as example_app/claude-code: the included base template's
+# `hostname: dsh.${STACK_DOMAIN:?...}.local` is interpolated before the
+# override below can replace it.
+#
+# network_mode: host is what makes the UI reachable at all: dsh only ever
+# binds 127.0.0.1, so it has to share the host's loopback to be reached at
+# http://localhost:3080 on the Docker host (and nowhere else). See
+# ../../templates/specs/services/dsh.yaml's header_comment.
+#
+# Then from this directory:
+#   docker compose up
+
+include:
+  - ../../templates/services/base/dsh/docker-compose.yml
+
+services:
+  dsh:
+    hostname: dsh
+    restart: "no"
+    network_mode: host
+
+    # The project directory dsh operates on — whatever you'd otherwise
+    # `cd` into before running `dsh web` on the host.
+    volumes:
+      - ./workspace:/workspace
