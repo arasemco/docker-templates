@@ -4,11 +4,27 @@ tag_default: local
 environment:
   ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
 
+volumes:
+  ssh:
+    path: /home/claude/.ssh
+    backup: true
+    owner:
+      uid: 1000
+      gid: 1000
+  config:
+    path: /home/claude/.config
+    backup: true
+    owner:
+      uid: 1000
+      gid: 1000
+
 bind_mounts:
   - source: ${HOME}/.claude
     target: /home/claude/.claude
+    backup: true
   - source: ${HOME}/.claude.json
     target: /home/claude/.claude.json
+    backup: true
 
 healthcheck:
   test: ["CMD", "claude", "--version"]
@@ -21,7 +37,9 @@ mem_default: "32G"
 
 labels:
   homepage.:
+    icon: claude-ai.svg
     description: "Persistent Claude Code CLI sandbox"
+    href: "https://claude.ai/code"
 
 extra:
   init: true
@@ -64,5 +82,11 @@ header_comment: |
   command) have no first-class schema field to live in otherwise.
 
   Bind mounts are host paths specific to aram.semo's as01 machine, not
-  portable across hosts. No `secrets:`/`volumes:`/backup story: nothing
-  here is meant to be backed up by this repo's backup/restore convention.
+  portable across hosts. Backed up: the `ssh` volume (dedicated keys, e.g.
+  for vps01), the `config` volume (~/.config: git identity and, with
+  `credential.helper "store --file ~/.config/git/credentials"`, push
+  credentials; GitHub CLI auth; any other tool's XDG config), ~/.claude
+  (memory, skills, hooks, settings, credentials) and
+  ~/.claude.json (MCP servers, per-project state) — the archive holds the
+  Claude login, git/GitHub credentials and MCP tokens, so treat it as a
+  secret.

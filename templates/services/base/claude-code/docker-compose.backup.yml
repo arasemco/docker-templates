@@ -1,0 +1,32 @@
+# Auto-generated from templates/specs/services/claude-code.yaml — do not edit directly.
+# Edit the spec and regenerate; see tools/README.md.
+
+include:
+  - ../../custom/backup/docker-compose.yml
+
+x-volumes: &claude-code-volumes
+  volumes:
+    - claude-code_ssh:/mnt/home/claude/.ssh
+    - claude-code_config:/mnt/home/claude/.config
+    - ${HOME}/.claude:/mnt/home/claude/.claude
+    - ${HOME}/.claude.json:/mnt/home/claude/.claude.json
+
+services:
+  backup: *claude-code-volumes
+  restore:
+    <<: *claude-code-volumes
+    configs:
+      - source: claude-code_restore_00_owner
+        target: /srv/configs/restore.d/00-claude-code-owner.sh
+
+configs:
+  claude-code_restore_00_owner:
+    content: |
+      set -e
+      chown -R 1000:1000 /mnt/home/claude/.ssh
+      find /mnt/home/claude/.ssh -type d -exec chmod 700 {} +
+      find /mnt/home/claude/.ssh -type f -exec chmod 600 {} +
+
+      chown -R 1000:1000 /mnt/home/claude/.config
+      find /mnt/home/claude/.config -type d -exec chmod 700 {} +
+      find /mnt/home/claude/.config -type f -exec chmod 600 {} +

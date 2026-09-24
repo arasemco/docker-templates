@@ -12,6 +12,14 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
 
     volumes:
+      - type: volume
+        source: claude-code_ssh
+        target: /home/claude/.ssh
+        read_only: false
+      - type: volume
+        source: claude-code_config
+        target: /home/claude/.config
+        read_only: false
       - type: bind
         source: ${HOME}/.claude
         target: /home/claude/.claude
@@ -51,6 +59,16 @@ services:
     labels:
       - homepage.group=${COMPOSE_PROJECT_NAME}
       - homepage.name=Claude Code
-      - homepage.icon=claude-code.png
+      - homepage.icon=claude-ai.svg
       - homepage.description=Persistent Claude Code CLI sandbox
+      - homepage.href=https://claude.ai/code
 
+volumes:
+  claude-code_ssh:
+    labels:
+      - pro.asemo.description=Claude Code ssh directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=claude-code
+  claude-code_config:
+    labels:
+      - pro.asemo.description=Claude Code config directory for ${COMPOSE_PROJECT_NAME}
+      - pro.asemo.service=claude-code
