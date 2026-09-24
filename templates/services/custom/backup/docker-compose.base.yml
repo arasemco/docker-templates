@@ -83,7 +83,25 @@ configs:
         exit 1
       fi
 
-      tar xzvpf "/srv/archives/$${BACKUP_FILE}" -C /mnt
+      ARCHIVE="/srv/archives/$${BACKUP_FILE}"
+
+      # tar replaces a file by unlinking it first, which fails (EBUSY) on a
+      # file that is itself a bind mount (e.g. ~/.claude.json). Extract
+      # everything else normally, then write bind-mounted files in place.
+      FILE_MOUNTS="$$(mktemp)"
+      awk '$$2 ~ "^/mnt/" {print $$2}' /proc/mounts | while read -r mount_point; do
+        if [ -f "$${mount_point}" ]; then echo ".$${mount_point#/mnt}"; fi
+      done > "$${FILE_MOUNTS}"
+
+      tar xzvpf "$${ARCHIVE}" -C /mnt -X "$${FILE_MOUNTS}"
+
+      while read -r member; do
+        if tar tzf "$${ARCHIVE}" "$${member}" >/dev/null 2>&1; then
+          echo "$${member} (in place)"
+          tar xzOf "$${ARCHIVE}" "$${member}" > "/mnt/$${member#./}"
+        fi
+      done < "$${FILE_MOUNTS}"
+      rm -f "$${FILE_MOUNTS}"
 
       for f in /srv/configs/restore.d/*.sh; do
         [ -e "$${f}" ] || continue
