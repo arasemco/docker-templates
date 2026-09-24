@@ -91,9 +91,9 @@ extensions:
   mailer:
     variants:
       smtp:
+        shared: true
         secrets:
           - name: password
-            shared: true
 
 header_comment: |
   GitLab (Community Edition) — self-hosted Git service with CI/CD, issues,

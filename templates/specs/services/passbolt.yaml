@@ -61,6 +61,7 @@ extensions:
   mailer:
     variants:
       smtp:
+        shared: true
         environment:
           EMAIL_:
             TRANSPORT_DEFAULT_:
@@ -72,7 +73,6 @@ extensions:
         secrets:
           - name: password
             env_var: EMAIL_TRANSPORT_DEFAULT_PASSWORD_FILE
-            shared: true
 
 header_comment: |
   Passbolt — self-hosted password manager.

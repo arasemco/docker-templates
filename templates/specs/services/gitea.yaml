@@ -197,6 +197,7 @@ extensions:
   mailer:
     variants:
       smtp:
+        shared: true
         environment:
           GITEA__mailer__:
             ENABLED: "-enabled:true"
@@ -209,7 +210,6 @@ extensions:
         secrets:
           - name: password
             env_var: GITEA__mailer__PASSWD__FILE
-            shared: true
 
 header_comment: |
   Gitea — self-hosted Git service with Actions CI support.

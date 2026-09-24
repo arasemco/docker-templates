@@ -78,6 +78,7 @@ extensions:
   mailer:
     variants:
       smtp:
+        shared: true
         environment:
           SMTP_HOST: "?host"
           SMTP_PORT: "-port:587"
@@ -89,7 +90,6 @@ extensions:
         secrets:
           - name: password
             env_var: SMTP_PASSWORD_FILE
-            shared: true
 
 header_comment: |
   Nextcloud — self-hosted file sync and share (apache image, runs as www-data/33).

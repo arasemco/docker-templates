@@ -128,6 +128,9 @@ class Extension:
     bind mount at all."""
 
     key: str  # variant key, e.g. "mariadb"; for a flat (ungrouped) extension this equals the group key
+    shared: bool = (
+        False  # env vars and secrets are shared by every stack, under env/000-generic/<key>/
+    )
     environment: dict = Factory(dict)
     secrets: list = Factory(list)  # list[Secret]
     configs: list = Factory(list)  # list[Config], named "<variant.key>_<suffix>"
@@ -290,6 +293,22 @@ def _load_configs(defs: list) -> list:
     ]
 
 
+def _load_extension(key: str, body: dict) -> Extension:
+    shared = bool(body.get("shared", False))
+    secrets = [_load_secret(s) for s in body.get("secrets", [])]
+    if shared:
+        for s in secrets:
+            s.shared = True
+    return Extension(
+        key=key,
+        shared=shared,
+        environment=flatten_prefixed(body.get("environment", {})),
+        secrets=secrets,
+        configs=_load_configs(body.get("configs")),
+        bind_mounts=_load_bind_mounts(body.get("bind_mounts")),
+    )
+
+
 def load_service_spec(d: dict) -> ServiceSpec:
     volumes = []
     for suffix, vdef in (d.get("volumes") or {}).items():
@@ -324,31 +343,13 @@ def load_service_spec(d: dict) -> ServiceSpec:
         body = body or {}
         if "variants" in body:
             variants = [
-                Extension(
-                    key=vkey,
-                    environment=flatten_prefixed((vbody or {}).get("environment", {})),
-                    secrets=[_load_secret(s) for s in (vbody or {}).get("secrets", [])],
-                    configs=_load_configs((vbody or {}).get("configs")),
-                    bind_mounts=_load_bind_mounts((vbody or {}).get("bind_mounts")),
-                )
+                _load_extension(vkey, vbody or {})
                 for vkey, vbody in (body.get("variants") or {}).items()
             ]
             extensions.append(ExtensionGroup(key=key, grouped=True, variants=variants))
         else:
             extensions.append(
-                ExtensionGroup(
-                    key=key,
-                    grouped=False,
-                    variants=[
-                        Extension(
-                            key=key,
-                            environment=flatten_prefixed(body.get("environment", {})),
-                            secrets=[_load_secret(s) for s in body.get("secrets", [])],
-                            configs=_load_configs(body.get("configs")),
-                            bind_mounts=_load_bind_mounts(body.get("bind_mounts")),
-                        )
-                    ],
-                )
+                ExtensionGroup(key=key, grouped=False, variants=[_load_extension(key, body)])
             )
 
     return ServiceSpec(
