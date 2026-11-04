@@ -15,7 +15,7 @@ dependencies = [
 scaffold-service = "docker_templates_tools:main"
 
 [dependency-groups]
-test = ["pytest==9.1.1"]
+test = ["pytest==9.2.0"]
 dev = ["pytest-cov==7.1.0", "pytest-html==4.2.0", "ruff==0.16.8"]
 
 [tool.pytest.ini_options]
